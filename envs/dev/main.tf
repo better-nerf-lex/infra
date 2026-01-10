@@ -117,6 +117,29 @@ module "rds" {
   depends_on = [module.vpc]
 }
 
+module "opensearch" {
+  count  = var.enable_elasticsearch ? 1 : 0
+  source = "../../modules/opensearch"
+
+  environment        = var.environment
+  project_name       = var.project_name
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnet_ids
+
+  depends_on = [module.vpc]
+}
+
+resource "aws_security_group_rule" "opensearch_ingress_gateway" {
+  count                    = var.enable_elasticsearch ? 1 : 0
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = module.opensearch[0].security_group_id
+  source_security_group_id = module.gateway_service.security_group_id
+  description              = "Allow HTTPS from gateway service to OpenSearch"
+}
+
 resource "aws_security_group_rule" "rds_ingress_gateway" {
   type                     = "ingress"
   from_port                = 5432
@@ -141,10 +164,10 @@ resource "aws_security_group_rule" "rds_ingress_payments" {
 module "iam" {
   source = "../../modules/iam"
 
-  environment  = var.environment
-  project_name = var.project_name
-  github_org   = var.github_org
-  github_repo  = var.github_repo
+  environment         = var.environment
+  project_name        = var.project_name
+  github_org          = var.github_org
+  github_repositories = var.github_repositories
 }
 
 module "gateway_service" {
@@ -172,12 +195,115 @@ module "gateway_service" {
   environment_variables = {
     SPRING_PROFILES_ACTIVE = "prod"
     AWS_REGION             = var.aws_region
+    FILE_SERVICE_URL       = "http://file-service.${var.environment}.${var.project_name}.local:8080"
+    ELASTICSEARCH_URL      = var.enable_elasticsearch ? "https://${module.opensearch[0].domain_endpoint}" : ""
+  }
+
+  service_registries = {
+    registry_arn = aws_service_discovery_service.gateway.arn
   }
 
   secrets = {
-    SPRING_R2DBC_URL      = "${module.rds.db_secret_arn}:host::"
-    SPRING_R2DBC_USERNAME = "${module.rds.db_secret_arn}:username::"
-    SPRING_R2DBC_PASSWORD = "${module.rds.db_secret_arn}:password::"
+    SPRING_R2DBC_URL            = "${module.rds.db_secret_arn}:host::"
+    SPRING_R2DBC_USERNAME       = "${module.rds.db_secret_arn}:username::"
+    SPRING_R2DBC_PASSWORD       = "${module.rds.db_secret_arn}:password::"
+    SPRING_AI_ANTHROPIC_API_KEY = "${aws_secretsmanager_secret.gateway_secrets.arn}:anthropic_api_key::"
+    JWT_SECRET                  = "${aws_secretsmanager_secret.gateway_secrets.arn}:jwt_secret::"
+    GOOGLE_CLIENT_ID            = "${aws_secretsmanager_secret.gateway_secrets.arn}:google_client_id::"
+    GOOGLE_CLIENT_SECRET        = "${aws_secretsmanager_secret.gateway_secrets.arn}:google_client_secret::"
+  }
+
+  depends_on = [module.alb, module.ecs_cluster]
+}
+
+resource "aws_secretsmanager_secret" "gateway_secrets" {
+  name        = "${var.environment}/${var.project_name}/gateway-secrets"
+  description = "Detailed secrets for gateway service"
+}
+
+resource "aws_secretsmanager_secret_version" "gateway_secrets" {
+  secret_id = aws_secretsmanager_secret.gateway_secrets.id
+  secret_string = jsonencode({
+    anthropic_api_key    = var.anthropic_api_key
+    jwt_secret           = var.jwt_secret
+    google_client_id     = var.google_client_id
+    google_client_secret = var.google_client_secret
+  })
+}
+
+resource "aws_service_discovery_private_dns_namespace" "internal" {
+  name        = "${var.environment}.${var.project_name}.local"
+  description = "Internal service discovery namespace"
+  vpc         = module.vpc.vpc_id
+}
+
+resource "aws_service_discovery_service" "gateway" {
+  name = "gateway"
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.internal.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_custom_config {
+    failure_threshold = 1
+  }
+}
+
+resource "aws_service_discovery_service" "file_service" {
+  name = "file-service"
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.internal.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_custom_config {
+    failure_threshold = 1
+  }
+}
+
+module "file_service" {
+  source = "../../modules/ecs-service"
+
+  environment           = var.environment
+  project_name          = var.project_name
+  service_name          = "file-service"
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  cluster_id            = module.ecs_cluster.cluster_id
+  cluster_name          = module.ecs_cluster.cluster_name
+  image_uri             = var.file_service_image_uri
+  container_port        = 8080
+  cpu                   = var.file_service_cpu
+  memory                = var.file_service_memory
+  desired_count         = var.file_service_desired_count
+  min_capacity          = var.file_service_min_capacity
+  max_capacity          = var.file_service_max_capacity
+  target_group_arn      = module.alb.file_service_target_group_arn
+  alb_security_group_id = module.alb.alb_security_group_id
+  log_group_name        = module.ecs_cluster.log_group_name
+  aws_region            = var.aws_region
+
+  service_registries = {
+    registry_arn = aws_service_discovery_service.file_service.arn
+  }
+
+  environment_variables = {
+    SPRING_PROFILES_ACTIVE = "prod"
+    AWS_REGION             = var.aws_region
   }
 
   depends_on = [module.alb, module.ecs_cluster]

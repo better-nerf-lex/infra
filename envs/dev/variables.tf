@@ -49,7 +49,7 @@ variable "api_domain" {
 variable "repository_names" {
   description = "List of ECR repository names"
   type        = list(string)
-  default     = ["gateway"]
+  default     = ["gateway", "file-service"]
 }
 
 variable "image_retention_count" {
@@ -105,9 +105,9 @@ variable "github_org" {
   type        = string
 }
 
-variable "github_repo" {
-  description = "GitHub repository name"
-  type        = string
+variable "github_repositories" {
+  description = "List of GitHub repository names allowed to assume the IAM role"
+  type        = list(string)
 }
 
 variable "gateway_image_uri" {
@@ -151,6 +151,12 @@ variable "enable_payments_service" {
   default     = false
 }
 
+variable "enable_elasticsearch" {
+  description = "Enable Elasticsearch (OpenSearch)"
+  type        = bool
+  default     = false
+}
+
 variable "payments_image_uri" {
   description = "Payments service Docker image URI"
   type        = string
@@ -185,4 +191,65 @@ variable "payments_max_capacity" {
   description = "Payments service maximum task count"
   type        = number
   default     = 3
+}
+
+variable "file_service_image_uri" {
+  description = "File service Docker image URI"
+  type        = string
+  default     = ""
+}
+
+variable "file_service_cpu" {
+  description = "File service CPU units"
+  type        = number
+  default     = 256
+}
+
+variable "file_service_memory" {
+  description = "File service memory in MB"
+  type        = number
+  default     = 512
+}
+
+variable "file_service_desired_count" {
+  description = "File service desired task count"
+  type        = number
+  default     = 1
+}
+
+variable "file_service_min_capacity" {
+  description = "File service minimum task count"
+  type        = number
+  default     = 1
+}
+
+variable "file_service_max_capacity" {
+  description = "File service maximum task count"
+  type        = number
+  default     = 3
+}
+
+
+variable "anthropic_api_key" {
+  description = "Anthropic API Key"
+  type        = string
+  sensitive   = true
+}
+
+variable "jwt_secret" {
+  description = "JWT Secret Key"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_client_id" {
+  description = "Google OAuth Client ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_client_secret" {
+  description = "Google OAuth Client Secret"
+  type        = string
+  sensitive   = true
 }
