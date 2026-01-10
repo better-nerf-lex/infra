@@ -7,13 +7,19 @@ variable "environment" {
 variable "project_name" {
   description = "Project name"
   type        = string
-  default     = "lexai"
+  default     = "paragrafic"
 }
 
 variable "aws_region" {
   description = "AWS region"
   type        = string
   default     = "eu-north-1"
+}
+
+variable "aws_profile" {
+  description = "AWS profile to use for authentication"
+  type        = string
+  default     = null
 }
 
 variable "vpc_cidr" {
@@ -31,19 +37,19 @@ variable "az_count" {
 variable "domain_name" {
   description = "Root domain name"
   type        = string
-  default     = "bntech.dev"
+  default     = "paragrafic.pl"
 }
 
 variable "frontend_domain" {
   description = "Frontend domain"
   type        = string
-  default     = "test-lex.bntech.dev"
+  default     = "test-0.paragrafic.pl"
 }
 
 variable "api_domain" {
   description = "API domain"
   type        = string
-  default     = "api-test-lex.bntech.dev"
+  default     = "api-test-0.paragrafic.pl"
 }
 
 variable "repository_names" {
@@ -155,6 +161,30 @@ variable "enable_elasticsearch" {
   description = "Enable Elasticsearch (OpenSearch)"
   type        = bool
   default     = false
+}
+
+variable "use_route53" {
+  description = "Whether to use Route 53 for DNS management (set to false if domain is managed externally)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_ssl_certificates" {
+  description = "Whether to enable SSL/TLS certificates for ALB and CloudFront (set to false on first apply if using external DNS, then true after DNS validation)"
+  type        = bool
+  default     = false
+}
+
+variable "existing_api_certificate_arn" {
+  description = "ARN of an existing ACM certificate for the API (ALB). If provided, no new certificate will be created. Must be in the same region as the ALB."
+  type        = string
+  default     = ""
+}
+
+variable "existing_frontend_certificate_arn" {
+  description = "ARN of an existing ACM certificate for the frontend (CloudFront). If provided, no new certificate will be created. Must be in us-east-1."
+  type        = string
+  default     = ""
 }
 
 variable "payments_image_uri" {

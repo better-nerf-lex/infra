@@ -1,19 +1,25 @@
 variable "environment" {
   description = "Environment name"
   type        = string
-  default     = "dev"
+  default     = "prod"
 }
 
 variable "project_name" {
   description = "Project name"
   type        = string
-  default     = "lexai"
+  default     = "paragrafic"
 }
 
 variable "aws_region" {
   description = "AWS region"
   type        = string
   default     = "eu-north-1"
+}
+
+variable "aws_profile" {
+  description = "AWS profile to use for authentication"
+  type        = string
+  default     = null
 }
 
 variable "vpc_cidr" {
@@ -31,19 +37,19 @@ variable "az_count" {
 variable "domain_name" {
   description = "Root domain name"
   type        = string
-  default     = "bntech.dev"
+  default     = "paragrafic.pl"
 }
 
 variable "frontend_domain" {
   description = "Frontend domain"
   type        = string
-  default     = "test-lex.bntech.dev"
+  default     = "test-0.paragrafic.pl"
 }
 
 variable "api_domain" {
   description = "API domain"
   type        = string
-  default     = "api-test-lex.bntech.dev"
+  default     = "api-test-0.paragrafic.pl"
 }
 
 variable "repository_names" {
@@ -105,9 +111,9 @@ variable "github_org" {
   type        = string
 }
 
-variable "github_repo" {
-  description = "GitHub repository name"
-  type        = string
+variable "github_repositories" {
+  description = "List of GitHub repository names allowed to assume the IAM role"
+  type        = list(string)
 }
 
 variable "gateway_image_uri" {
@@ -147,6 +153,18 @@ variable "gateway_max_capacity" {
 
 variable "enable_payments_service" {
   description = "Enable payments service"
+  type        = bool
+  default     = false
+}
+
+variable "use_route53" {
+  description = "Whether to use Route 53 for DNS management (set to false if domain is managed externally)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_ssl_certificates" {
+  description = "Whether to enable SSL/TLS certificates for ALB and CloudFront (set to false on first apply if using external DNS, then true after DNS validation)"
   type        = bool
   default     = false
 }

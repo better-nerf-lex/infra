@@ -1,5 +1,6 @@
 locals {
-  s3_origin_id = "S3-${var.bucket_name}"
+  s3_origin_id  = "S3-${var.bucket_name}"
+  alb_origin_id = "ALB-API"
 }
 
 resource "aws_cloudfront_distribution" "frontend" {
@@ -8,7 +9,7 @@ resource "aws_cloudfront_distribution" "frontend" {
   comment             = "${var.environment} ${var.project_name} frontend"
   default_root_object = "index.html"
   price_class         = var.price_class
-  aliases             = [var.domain_name]
+  aliases             = var.certificate_arn != "" ? [var.domain_name] : []
 
   origin {
     domain_name = var.bucket_regional_domain_name
@@ -16,6 +17,23 @@ resource "aws_cloudfront_distribution" "frontend" {
 
     s3_origin_config {
       origin_access_identity = var.cloudfront_oai_path
+    }
+  }
+
+  dynamic "origin" {
+    for_each = var.alb_dns_name != "" ? [1] : []
+    content {
+      domain_name = var.alb_dns_name
+      origin_id   = local.alb_origin_id
+
+      custom_origin_config {
+        http_port                = 80
+        https_port               = 443
+        origin_protocol_policy   = "https-only"
+        origin_ssl_protocols     = ["TLSv1.2"]
+        origin_keepalive_timeout = 5
+        origin_read_timeout      = 30
+      }
     }
   }
 
@@ -43,6 +61,27 @@ resource "aws_cloudfront_distribution" "frontend" {
       event_type   = "viewer-request"
       function_arn = aws_cloudfront_function.spa_routing.arn
     }
+  }
+
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = local.alb_origin_id
+
+    forwarded_values {
+      query_string = true
+      headers      = ["*"]
+      cookies {
+        forward = "all"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
+    compress               = true
   }
 
   ordered_cache_behavior {
@@ -104,9 +143,10 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = var.certificate_arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
+    acm_certificate_arn            = var.certificate_arn != "" ? var.certificate_arn : null
+    cloudfront_default_certificate = var.certificate_arn == "" ? true : null
+    ssl_support_method             = var.certificate_arn != "" ? "sni-only" : null
+    minimum_protocol_version       = var.certificate_arn != "" ? "TLSv1.2_2021" : "TLSv1"
   }
 
   tags = {
@@ -125,13 +165,13 @@ resource "aws_cloudfront_function" "spa_routing" {
     function handler(event) {
       var request = event.request;
       var uri = request.uri;
-      
+
       // Check if the URI has a file extension
       if (!uri.includes('.')) {
         // If no extension, assume it's a route and serve index.html
         request.uri = '/index.html';
       }
-      
+
       return request;
     }
   EOT

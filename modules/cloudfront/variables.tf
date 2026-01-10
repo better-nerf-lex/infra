@@ -6,7 +6,7 @@ variable "environment" {
 variable "project_name" {
   description = "Project name for resource tagging"
   type        = string
-  default     = "lexai"
+  default     = "paragrafic"
 }
 
 variable "domain_name" {
@@ -30,12 +30,19 @@ variable "cloudfront_oai_path" {
 }
 
 variable "certificate_arn" {
-  description = "ACM certificate ARN (must be in us-east-1)"
+  description = "ACM certificate ARN (must be in us-east-1, leave empty to use CloudFront default certificate)"
   type        = string
+  default     = ""
 }
 
 variable "price_class" {
   description = "CloudFront price class"
   type        = string
   default     = "PriceClass_100"
+}
+
+variable "alb_dns_name" {
+  description = "ALB DNS name for API origin"
+  type        = string
+  default     = ""
 }

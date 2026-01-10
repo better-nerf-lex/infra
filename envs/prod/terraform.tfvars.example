@@ -1,6 +1,6 @@
 # GitHub configuration
 github_org  = "YOUR_GITHUB_ORG"
-github_repo = "lexai"
+github_repo = "paragrafic"
 
 # Gateway service image (update after first ECR push)
-gateway_image_uri = "YOUR_ACCOUNT_ID.dkr.ecr.eu-north-1.amazonaws.com/lexai/gateway:latest"
+gateway_image_uri = "YOUR_ACCOUNT_ID.dkr.ecr.eu-north-1.amazonaws.com/paragrafic/gateway:latest"

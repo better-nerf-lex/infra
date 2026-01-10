@@ -6,7 +6,7 @@ variable "environment" {
 variable "project_name" {
   description = "Project name for resource tagging"
   type        = string
-  default     = "lexai"
+  default     = "paragrafic"
 }
 
 variable "vpc_id" {
@@ -40,13 +40,13 @@ variable "max_allocated_storage" {
 variable "db_name" {
   description = "Database name"
   type        = string
-  default     = "lexai"
+  default     = "paragrafic"
 }
 
 variable "db_username" {
   description = "Database master username"
   type        = string
-  default     = "lexai_admin"
+  default     = "paragrafic_admin"
 }
 
 variable "multi_az" {

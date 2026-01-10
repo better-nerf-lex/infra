@@ -1,6 +1,35 @@
 # GitHub configuration
-github_org  = "YOUR_GITHUB_ORG"
-github_repo = "lexai"
+github_org          = "your-github-org"
+github_repositories = ["paragrafic-gateway", "paragrafic-file-service", "paragrafic-frontend"]
 
-# Gateway service image (update after first ECR push)
-gateway_image_uri = "YOUR_ACCOUNT_ID.dkr.ecr.eu-north-1.amazonaws.com/lexai/gateway:latest"
+# AWS Profile (optional)
+# aws_profile = "paragrafic"
+
+# Service Images (update after first ECR push)
+gateway_image_uri      = "123456789012.dkr.ecr.eu-north-1.amazonaws.com/paragrafic/gateway:latest"
+file_service_image_uri = "123456789012.dkr.ecr.eu-north-1.amazonaws.com/paragrafic/file-service:latest"
+payments_image_uri     = "123456789012.dkr.ecr.eu-north-1.amazonaws.com/paragrafic/payments:latest"
+
+# Client Front (S3/CloudFront) configuration
+domain_name     = "paragraphic.pl"
+frontend_domain = "test-0.paragraphic.pl"
+api_domain      = "api-test-0.paragraphic.pl"
+
+# Elasticsearch (OpenSearch) configuration (disabled by default - takes 10+ minutes to create)
+enable_elasticsearch = false
+
+# SSL/TLS Certificates (set to false on first apply if using external DNS, then true after DNS validation)
+enable_ssl_certificates = false
+
+# Existing ACM Certificate ARNs (optional - use pre-validated certificates instead of creating new ones)
+# If you have already created and validated certificates in AWS Certificate Manager, provide their ARNs here.
+# Frontend certificate must be in us-east-1 (required by CloudFront)
+# existing_frontend_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# API certificate must be in the same region as ALB (eu-north-1 for this environment)
+# existing_api_certificate_arn = "arn:aws:acm:eu-north-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Secrets (use environment variables TF_VAR_... or a secure .tfvars file in production)
+# anthropic_api_key = "..."
+# jwt_secret        = "..."
+# google_client_id  = "..."
+# google_client_secret = "..."

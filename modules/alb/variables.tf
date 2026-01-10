@@ -6,7 +6,7 @@ variable "environment" {
 variable "project_name" {
   description = "Project name for resource tagging"
   type        = string
-  default     = "lexai"
+  default     = "paragrafic"
 }
 
 variable "vpc_id" {
@@ -20,8 +20,9 @@ variable "public_subnet_ids" {
 }
 
 variable "certificate_arn" {
-  description = "ARN of ACM certificate for HTTPS"
+  description = "ARN of ACM certificate for HTTPS (leave empty to skip HTTPS listener creation)"
   type        = string
+  default     = ""
 }
 
 variable "enable_payments_service" {

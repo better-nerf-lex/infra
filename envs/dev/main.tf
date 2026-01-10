@@ -42,10 +42,11 @@ module "cloudfront" {
   bucket_name                 = module.s3_frontend.bucket_name
   bucket_regional_domain_name = module.s3_frontend.bucket_regional_domain_name
   cloudfront_oai_path         = module.s3_frontend.cloudfront_oai_path
-  certificate_arn             = module.acm.frontend_certificate_arn
+  certificate_arn             = var.enable_ssl_certificates ? module.acm.frontend_certificate_arn : ""
   price_class                 = "PriceClass_100"
+  alb_dns_name                = module.alb.alb_dns_name
 
-  depends_on = [module.s3_frontend, module.acm]
+  depends_on = [module.s3_frontend, module.alb]
 }
 
 module "acm" {
@@ -55,28 +56,20 @@ module "acm" {
     aws.us_east_1 = aws.us_east_1
   }
 
-  environment        = var.environment
-  project_name       = var.project_name
-  domain_name        = var.domain_name
-  api_subdomain      = var.api_domain
-  frontend_subdomain = var.frontend_domain
-}
-
-# Route53 record for API (points to ALB)
-resource "aws_route53_record" "api" {
-  zone_id = module.acm.route53_zone_id
-  name    = var.api_domain
-  type    = "A"
-
-  alias {
-    name                   = module.alb.alb_dns_name
-    zone_id                = module.alb.alb_zone_id
-    evaluate_target_health = true
-  }
+  environment                       = var.environment
+  project_name                      = var.project_name
+  domain_name                       = var.domain_name
+  api_subdomain                     = var.api_domain
+  frontend_subdomain                = var.frontend_domain
+  use_route53                       = var.use_route53
+  existing_api_certificate_arn      = var.existing_api_certificate_arn
+  existing_frontend_certificate_arn = var.existing_frontend_certificate_arn
 }
 
 # Route53 record for Frontend (points to CloudFront)
+# Only created if Route 53 is used for DNS management
 resource "aws_route53_record" "frontend" {
+  count   = var.use_route53 ? 1 : 0
   zone_id = module.acm.route53_zone_id
   name    = var.frontend_domain
   type    = "A"
@@ -91,14 +84,12 @@ resource "aws_route53_record" "frontend" {
 module "alb" {
   source = "../../modules/alb"
 
-  environment               = var.environment
-  project_name              = var.project_name
-  vpc_id                    = module.vpc.vpc_id
-  public_subnet_ids         = module.vpc.public_subnet_ids
-  certificate_arn           = module.acm.api_certificate_arn
-  enable_payments_service   = var.enable_payments_service
-
-  depends_on = [module.acm]
+  environment             = var.environment
+  project_name            = var.project_name
+  vpc_id                  = module.vpc.vpc_id
+  public_subnet_ids       = module.vpc.public_subnet_ids
+  certificate_arn         = var.enable_ssl_certificates ? module.acm.api_certificate_arn : ""
+  enable_payments_service = var.enable_payments_service
 }
 
 module "rds" {

@@ -19,11 +19,11 @@ resource "aws_security_group" "rds" {
 }
 
 resource "aws_db_subnet_group" "main" {
-  name       = "${var.environment}-db-subnet-group"
+  name       = "${var.environment}-gateway-db-subnet-group"
   subnet_ids = var.private_subnet_ids
 
   tags = {
-    Name        = "${var.environment}-db-subnet-group"
+    Name        = "${var.environment}-gateway-db-subnet-group"
     Environment = var.environment
     Project     = var.project_name
   }
@@ -35,11 +35,11 @@ resource "random_password" "db_password" {
 }
 
 resource "aws_secretsmanager_secret" "db_password" {
-  name                    = "${var.environment}-db-password"
+  name                    = "${var.environment}-gateway-db-password"
   recovery_window_in_days = var.environment == "prod" ? 30 : 0
 
   tags = {
-    Name        = "${var.environment}-db-password"
+    Name        = "${var.environment}-gateway-db-password"
     Environment = var.environment
     Project     = var.project_name
   }
@@ -81,7 +81,7 @@ resource "aws_db_parameter_group" "main" {
 resource "aws_db_instance" "main" {
   identifier     = "${var.environment}-postgres"
   engine         = "postgres"
-  engine_version = "16.4"
+  engine_version = "16.6"
   instance_class = var.instance_class
 
   allocated_storage     = var.allocated_storage

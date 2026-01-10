@@ -9,16 +9,19 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "lexai-terraform-state-dev"
-    key            = "dev/terraform.tfstate"
+    bucket         = "paragrafic-terraform-state-prod"
+    key            = "prod/terraform.tfstate"
     region         = "eu-north-1"
     encrypt        = true
-    dynamodb_table = "lexai-terraform-locks-dev"
+    dynamodb_table = "paragrafic-terraform-locks-prod"
+    # Uncomment and set your AWS profile name if not using default credentials:
+    # profile        = "your-aws-profile"
   }
 }
 
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = var.aws_profile
 
   default_tags {
     tags = {
@@ -31,8 +34,9 @@ provider "aws" {
 
 # Provider for CloudFront certificates (must be us-east-1)
 provider "aws" {
-  alias  = "us_east_1"
-  region = "us-east-1"
+  alias   = "us_east_1"
+  region  = "us-east-1"
+  profile = var.aws_profile
 
   default_tags {
     tags = {

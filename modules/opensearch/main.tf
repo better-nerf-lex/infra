@@ -31,8 +31,8 @@ resource "aws_opensearch_domain" "main" {
   engine_version = var.engine_version
 
   cluster_config {
-    instance_type          = var.instance_type
-    instance_count         = 1
+    instance_type            = var.instance_type
+    instance_count           = 1
     dedicated_master_enabled = false
     zone_awareness_enabled   = false
   }
@@ -85,7 +85,15 @@ CONFIG
     Environment = var.environment
     Project     = var.project_name
   }
+
+  depends_on = [aws_iam_service_linked_role.opensearch]
 }
 
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
+
+# Service-linked role for OpenSearch to access VPC resources
+resource "aws_iam_service_linked_role" "opensearch" {
+  aws_service_name = "es.amazonaws.com"
+  description      = "Service-linked role for Amazon OpenSearch Service"
+}

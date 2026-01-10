@@ -6,7 +6,7 @@ variable "environment" {
 variable "project_name" {
   description = "Project name for resource tagging"
   type        = string
-  default     = "lexai"
+  default     = "paragrafic"
 }
 
 variable "version_retention_days" {

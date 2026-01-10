@@ -11,7 +11,7 @@ variable "environment" {
 variable "project_name" {
   description = "Project name"
   type        = string
-  default     = "lexai"
+  default     = "paragrafic"
 }
 
 variable "aws_region" {
