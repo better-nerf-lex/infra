@@ -49,7 +49,7 @@ variable "frontend_domain" {
 variable "api_domain" {
   description = "API domain"
   type        = string
-  default     = "api-test-0.paragrafic.pl"
+  default     = "test-0.paragrafic.pl"
 }
 
 variable "repository_names" {

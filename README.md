@@ -189,8 +189,8 @@ If your domain is managed outside of AWS, you **do not need Route 53**.
 6. Set `enable_ssl_certificates = true` in your `terraform.tfvars`
 7. Run `terraform apply` again to enable HTTPS on ALB and CloudFront
 8. Add the following DNS records to point your domain to AWS resources:
-   - **Frontend (CloudFront)**: Create a CNAME record for your frontend domain (e.g., `test-0.paragraphic.pl`) pointing to the CloudFront distribution domain (check `terraform output cloudfront_domain_name`)
-   - **API (ALB)**: If using a separate API domain, create a CNAME record pointing to the ALB DNS name (check `terraform output alb_dns_name`). If using path-based routing (e.g., `test-0.paragraphic.pl/api`), no separate record is needed.
+   - **Frontend (CloudFront)**: Create a CNAME record for your frontend domain (e.g., `test-0.paragrafic.pl`) pointing to the CloudFront distribution domain (check `terraform output cloudfront_domain_name`)
+   - **API (ALB)**: If using a separate API domain, create a CNAME record pointing to the ALB DNS name (check `terraform output alb_dns_name`). If using path-based routing (e.g., `test-0.paragrafic.pl/api`), no separate record is needed.
 
 > **⚠️ Important:** When using external DNS, set `enable_ssl_certificates = false` on the first apply to avoid certificate validation errors. After adding DNS validation records and waiting for validation, set `enable_ssl_certificates = true` and run `terraform apply` again.
 
@@ -198,11 +198,39 @@ If your domain is managed outside of AWS, you **do not need Route 53**.
 
 ```
 # Certificate Validation (from Terraform outputs)
-_abc123.test-0.paragraphic.pl  CNAME  _xyz789.acm-validations.aws.
+_abc123.test-0.paragrafic.pl  CNAME  _xyz789.acm-validations.aws.
 
 # Frontend (points to CloudFront)
-test-0.paragraphic.pl          CNAME  d1234567890.cloudfront.net
+test-0.paragrafic.pl          CNAME  d1234567890.cloudfront.net
 ```
+
+### DNS Configuration for Dev Environment (test-0.paragrafic.pl)
+
+After applying Terraform for the dev environment, configure the following DNS records with your domain provider:
+
+1. **Get CloudFront distribution domain:**
+   ```bash
+   cd infra/envs/dev
+   terraform output cloudfront_distribution_domain_name
+   ```
+
+2. **Create CNAME record** in your DNS provider (e.g., OVH, home.pl):
+   - **Type:** CNAME
+   - **Name:** `test-0` (or `test-0.paragrafic.pl` depending on provider)
+   - **Value:** The CloudFront domain from step 1 (e.g., `d1234567890abc.cloudfront.net`)
+   - **TTL:** 3600 (or default)
+
+3. **Verify DNS propagation:**
+   ```bash
+   dig test-0.paragrafic.pl
+   nslookup test-0.paragrafic.pl
+   ```
+
+4. **Access your application:**
+   - Frontend: `https://test-0.paragrafic.pl`
+   - API: `https://test-0.paragrafic.pl/api`
+
+> **Note:** DNS propagation can take 5 minutes to 48 hours depending on your DNS provider and TTL settings. CloudFront handles routing API requests to the ALB via path-based routing (`/api/*`), so only one CNAME record is needed.
 
 ### Option 2: AWS Route 53
 
@@ -535,8 +563,8 @@ Creates:
 ## Accessing the Application
 
 After deployment:
-- **Frontend**: https://test-0.paragraphic.pl
-- **API**: https://test-0.paragraphic.pl/api
+- **Frontend**: https://test-0.paragrafic.pl
+- **API**: https://test-0.paragrafic.pl/api
 
 Health check endpoint: `/actuator/health`
 

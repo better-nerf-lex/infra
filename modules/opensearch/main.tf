@@ -3,13 +3,8 @@ resource "aws_security_group" "opensearch" {
   description = "Security group for OpenSearch"
   vpc_id      = var.vpc_id
 
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Should be restricted to VPC CIDR in production
-    description = "Allow HTTPS for OpenSearch"
-  }
+  # Ingress rules should be added externally via security group rules
+  # or restricted to VPC CIDR here.
 
   egress {
     from_port   = 0

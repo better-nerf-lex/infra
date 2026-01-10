@@ -120,15 +120,15 @@ module "opensearch" {
   depends_on = [module.vpc]
 }
 
-resource "aws_security_group_rule" "opensearch_ingress_gateway" {
-  count                    = var.enable_elasticsearch ? 1 : 0
-  type                     = "ingress"
-  from_port                = 443
-  to_port                  = 443
-  protocol                 = "tcp"
-  security_group_id        = module.opensearch[0].security_group_id
-  source_security_group_id = module.gateway_service.security_group_id
-  description              = "Allow HTTPS from gateway service to OpenSearch"
+resource "aws_security_group_rule" "opensearch_ingress_vpc" {
+  count             = var.enable_elasticsearch ? 1 : 0
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = module.opensearch[0].security_group_id
+  cidr_blocks       = [module.vpc.vpc_cidr]
+  description       = "Allow HTTPS from within VPC to OpenSearch"
 }
 
 resource "aws_security_group_rule" "rds_ingress_gateway" {
@@ -295,6 +295,7 @@ module "file_service" {
   environment_variables = {
     SPRING_PROFILES_ACTIVE = "prod"
     AWS_REGION             = var.aws_region
+    ELASTICSEARCH_URL      = var.enable_elasticsearch ? "https://${module.opensearch[0].domain_endpoint}" : ""
   }
 
   depends_on = [module.alb, module.ecs_cluster]
@@ -327,6 +328,7 @@ module "payments_service" {
   environment_variables = {
     SPRING_PROFILES_ACTIVE = "prod"
     AWS_REGION             = var.aws_region
+    ELASTICSEARCH_URL      = var.enable_elasticsearch ? "https://${module.opensearch[0].domain_endpoint}" : ""
   }
 
   secrets = {

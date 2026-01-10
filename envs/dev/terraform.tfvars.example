@@ -11,9 +11,9 @@ file_service_image_uri = "123456789012.dkr.ecr.eu-north-1.amazonaws.com/paragraf
 payments_image_uri     = "123456789012.dkr.ecr.eu-north-1.amazonaws.com/paragrafic/payments:latest"
 
 # Client Front (S3/CloudFront) configuration
-domain_name     = "paragraphic.pl"
-frontend_domain = "test-0.paragraphic.pl"
-api_domain      = "api-test-0.paragraphic.pl"
+domain_name     = "paragrafic.pl"
+frontend_domain = "test-0.paragrafic.pl"
+api_domain      = "test-0.paragrafic.pl"
 
 # Elasticsearch (OpenSearch) configuration (disabled by default - takes 10+ minutes to create)
 enable_elasticsearch = false

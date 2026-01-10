@@ -30,8 +30,9 @@ resource "aws_db_subnet_group" "main" {
 }
 
 resource "random_password" "db_password" {
-  length  = 32
-  special = true
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?" # Exclude characters not allowed by RDS: /, @, ", and space
 }
 
 resource "aws_secretsmanager_secret" "db_password" {

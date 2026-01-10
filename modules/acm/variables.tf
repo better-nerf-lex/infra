@@ -15,7 +15,7 @@ variable "domain_name" {
 }
 
 variable "api_subdomain" {
-  description = "API subdomain (e.g., api-test-0.paragrafic.pl)"
+  description = "API subdomain (e.g., test-0.paragrafic.pl)"
   type        = string
 }
 
