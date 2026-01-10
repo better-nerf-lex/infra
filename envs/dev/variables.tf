@@ -55,7 +55,7 @@ variable "api_domain" {
 variable "repository_names" {
   description = "List of ECR repository names"
   type        = list(string)
-  default     = ["gateway", "file-service"]
+  default     = ["gateway", "file-service", "paragrafic-front"]
 }
 
 variable "image_retention_count" {

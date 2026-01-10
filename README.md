@@ -461,11 +461,29 @@ docker push ACCOUNT_ID.dkr.ecr.eu-north-1.amazonaws.com/paragrafic/gateway:lates
 
 ### 6. Update ECS Service
 
-After pushing the initial image, update the task definition image URI in `terraform.tfvars` and run:
+After pushing the initial images to ECR, you need to update Terraform with the actual image URIs to deploy your services.
 
-```bash
-terraform apply
-```
+1. **Get the ECR repository URLs**:
+   ```bash
+   cd envs/dev
+   terraform output ecr_repository_urls
+   ```
+
+2. **Update `terraform.tfvars`**:
+   Copy the URLs from the output and update the corresponding variables in your `envs/dev/terraform.tfvars` file, appending the `:latest` tag (or your specific version tag):
+   ```hcl
+   gateway_image_uri      = "579540613167.dkr.ecr.eu-north-1.amazonaws.com/paragrafic/gateway:latest"
+   file_service_image_uri = "579540613167.dkr.ecr.eu-north-1.amazonaws.com/paragrafic/file-service:latest"
+   # Add others if enabled (e.g., payments_image_uri)
+   ```
+
+3. **Apply the changes**:
+   Running `terraform apply` will automatically create new Task Definitions and update your ECS Services to use the new images.
+   ```bash
+   terraform apply
+   ```
+
+> **Note:** Whenever you push a new image with a different tag, or if you want to force a redeploy with the `:latest` tag after a new push, you should run `terraform apply`. For the `:latest` tag, if Terraform doesn't detect a change, you can use `aws ecs update-service --force-new-deployment`.
 
 ## CI/CD Workflows
 

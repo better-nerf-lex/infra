@@ -15,7 +15,7 @@ output "frontend_url" {
 
 output "api_url" {
   description = "API URL"
-  value       = "https://${var.api_domain}"
+  value       = "https://${var.api_domain}/api"
 }
 
 output "cloudfront_distribution_id" {
