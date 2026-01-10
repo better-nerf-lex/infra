@@ -204,34 +204,6 @@ _abc123.test-0.paragrafic.pl  CNAME  _xyz789.acm-validations.aws.
 test-0.paragrafic.pl          CNAME  d1234567890.cloudfront.net
 ```
 
-### DNS Configuration for Dev Environment (test-0.paragrafic.pl)
-
-After applying Terraform for the dev environment, configure the following DNS records with your domain provider:
-
-1. **Get CloudFront distribution domain:**
-   ```bash
-   cd infra/envs/dev
-   terraform output cloudfront_distribution_domain_name
-   ```
-
-2. **Create CNAME record** in your DNS provider (e.g., OVH, home.pl):
-   - **Type:** CNAME
-   - **Name:** `test-0` (or `test-0.paragrafic.pl` depending on provider)
-   - **Value:** The CloudFront domain from step 1 (e.g., `d1234567890abc.cloudfront.net`)
-   - **TTL:** 3600 (or default)
-
-3. **Verify DNS propagation:**
-   ```bash
-   dig test-0.paragrafic.pl
-   nslookup test-0.paragrafic.pl
-   ```
-
-4. **Access your application:**
-   - Frontend: `https://test-0.paragrafic.pl`
-   - API: `https://test-0.paragrafic.pl/api`
-
-> **Note:** DNS propagation can take 5 minutes to 48 hours depending on your DNS provider and TTL settings. CloudFront handles routing API requests to the ALB via path-based routing (`/api/*`), so only one CNAME record is needed.
-
 ### Option 2: AWS Route 53
 
 If you want AWS to manage your DNS:
@@ -461,29 +433,11 @@ docker push ACCOUNT_ID.dkr.ecr.eu-north-1.amazonaws.com/paragrafic/gateway:lates
 
 ### 6. Update ECS Service
 
-After pushing the initial images to ECR, you need to update Terraform with the actual image URIs to deploy your services.
+After pushing the initial image, update the task definition image URI in `terraform.tfvars` and run:
 
-1. **Get the ECR repository URLs**:
-   ```bash
-   cd envs/dev
-   terraform output ecr_repository_urls
-   ```
-
-2. **Update `terraform.tfvars`**:
-   Copy the URLs from the output and update the corresponding variables in your `envs/dev/terraform.tfvars` file, appending the `:latest` tag (or your specific version tag):
-   ```hcl
-   gateway_image_uri      = "579540613167.dkr.ecr.eu-north-1.amazonaws.com/paragrafic/gateway:latest"
-   file_service_image_uri = "579540613167.dkr.ecr.eu-north-1.amazonaws.com/paragrafic/file-service:latest"
-   # Add others if enabled (e.g., payments_image_uri)
-   ```
-
-3. **Apply the changes**:
-   Running `terraform apply` will automatically create new Task Definitions and update your ECS Services to use the new images.
-   ```bash
-   terraform apply
-   ```
-
-> **Note:** Whenever you push a new image with a different tag, or if you want to force a redeploy with the `:latest` tag after a new push, you should run `terraform apply`. For the `:latest` tag, if Terraform doesn't detect a change, you can use `aws ecs update-service --force-new-deployment`.
+```bash
+terraform apply
+```
 
 ## CI/CD Workflows
 
@@ -664,6 +618,24 @@ aws acm describe-certificate --certificate-arn <cert-arn>
 To destroy the infrastructure:
 
 ```bash
+cd infra/envs/dev
+terraform destroy
+```
+
+**Warning**: This will delete all resources including the database. Make sure to backup any important data first.
+
+## Security Best Practices
+
+1. **Secrets Management**: All sensitive data stored in AWS Secrets Manager
+2. **Network Isolation**: ECS tasks and RDS in private subnets
+3. **Encryption**: RDS encryption at rest, HTTPS in transit
+4. **IAM**: Least privilege access with GitHub OIDC
+5. **Security Scanning**: Trivy scans in CI pipeline
+6. **Backup**: Automated RDS backups with 7-30 day retention
+
+## Support
+
+For issues or questions, please open an issue in the GitHub repository.
 cd infra/envs/dev
 terraform destroy
 ```
