@@ -27,8 +27,3 @@ output "alb_security_group_id" {
   description = "Security group ID of the ALB"
   value       = aws_security_group.alb.id
 }
-
-output "file_service_target_group_arn" {
-  description = "ARN of the file service target group"
-  value       = aws_lb_target_group.file_service.arn
-}

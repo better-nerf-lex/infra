@@ -104,31 +104,37 @@ resource "aws_lb_target_group" "payments" {
   }
 }
 
-resource "aws_lb_target_group" "file_service" {
-  name        = "${var.environment}-file-service-tg"
-  port        = 8080
-  protocol    = "HTTP"
-  vpc_id      = var.vpc_id
-  target_type = "ip"
 
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-    timeout             = 5
-    interval            = 30
-    path                = "/actuator/health"
-    matcher             = "200"
-  }
+# File service target group not needed - service is internal only
+# File service is accessed via AWS Cloud Map service discovery
+# URL: http://file-service.dev.paragrafic.local:8080
 
-  deregistration_delay = 30
+# resource "aws_lb_target_group" "file_service" {
+#   name        = "${var.environment}-file-service-tg"
+#   port        = 8080
+#   protocol    = "HTTP"
+#   vpc_id      = var.vpc_id
+#   target_type = "ip"
+#
+#   health_check {
+#     enabled             = true
+#     healthy_threshold   = 2
+#     unhealthy_threshold = 3
+#     timeout             = 5
+#     interval            = 30
+#     path                = "/actuator/health"
+#     matcher             = "200"
+#   }
+#
+#   deregistration_delay = 30
+#
+#   tags = {
+#     Name        = "${var.environment}-file-service-tg"
+#     Environment = var.environment
+#     Project     = var.project_name
+#   }
+# }
 
-  tags = {
-    Name        = "${var.environment}-file-service-tg"
-    Environment = var.environment
-    Project     = var.project_name
-  }
-}
 
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
@@ -202,19 +208,23 @@ resource "aws_lb_listener_rule" "payments" {
   }
 }
 
-resource "aws_lb_listener_rule" "file_service" {
-  count        = var.certificate_arn != "" ? 1 : 0
-  listener_arn = aws_lb_listener.https[0].arn
-  priority     = 102
+# File service is internal-only, accessed via service discovery
+# No public ALB routing for file-service
+# Gateway calls it at: http://file-service.dev.paragrafic.local:8080
 
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.file_service.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/api/files/*"]
-    }
-  }
-}
+# resource "aws_lb_listener_rule" "file_service" {
+#   count        = var.certificate_arn != "" ? 1 : 0
+#   listener_arn = aws_lb_listener.https[0].arn
+#   priority     = 102
+#
+#   action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.file_service.arn
+#   }
+#
+#   condition {
+#     path_pattern {
+#       values = ["/api/files/*"]
+#     }
+#   }
+# }

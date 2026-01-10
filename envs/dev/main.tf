@@ -286,8 +286,8 @@ module "file_service" {
   desired_count         = var.file_service_desired_count
   min_capacity          = var.file_service_min_capacity
   max_capacity          = var.file_service_max_capacity
-  target_group_arn      = module.alb.file_service_target_group_arn
-  alb_security_group_id = module.alb.alb_security_group_id
+  # No target_group_arn - internal service only
+  # No alb_security_group_id - internal service only
   log_group_name        = module.ecs_cluster.log_group_name
   aws_region            = var.aws_region
 
@@ -304,7 +304,7 @@ module "file_service" {
     ELASTICSEARCH_ENABLED = var.enable_elasticsearch ? "true" : "false"
   }
 
-  depends_on = [module.alb, module.ecs_cluster]
+  depends_on = [module.ecs_cluster]
 }
 
 # Payments service (disabled by default, enable via variable)

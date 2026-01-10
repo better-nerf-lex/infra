@@ -1,14 +1,34 @@
+data "aws_vpc" "selected" {
+  id = var.vpc_id
+}
+
 resource "aws_security_group" "ecs_tasks" {
   name        = "${var.environment}-${var.service_name}-sg"
   description = "Security group for ECS tasks"
   vpc_id      = var.vpc_id
 
-  ingress {
-    from_port       = var.container_port
-    to_port         = var.container_port
-    protocol        = "tcp"
-    security_groups = [var.alb_security_group_id]
-    description     = "Allow traffic from ALB"
+  # Allow traffic from ALB (only for public services)
+  dynamic "ingress" {
+    for_each = var.alb_security_group_id != null ? [1] : []
+    content {
+      from_port       = var.container_port
+      to_port         = var.container_port
+      protocol        = "tcp"
+      security_groups = [var.alb_security_group_id]
+      description     = "Allow traffic from ALB"
+    }
+  }
+
+  # Allow traffic from VPC (for internal-only services)
+  dynamic "ingress" {
+    for_each = var.alb_security_group_id == null ? [1] : []
+    content {
+      from_port   = var.container_port
+      to_port     = var.container_port
+      protocol    = "tcp"
+      cidr_blocks = [data.aws_vpc.selected.cidr_block]
+      description = "Allow traffic from VPC for internal services"
+    }
   }
 
   egress {
@@ -165,10 +185,14 @@ resource "aws_ecs_service" "main" {
     assign_public_ip = false
   }
 
-  load_balancer {
-    target_group_arn = var.target_group_arn
-    container_name   = var.service_name
-    container_port   = var.container_port
+  # Load balancer configuration only for public services
+  dynamic "load_balancer" {
+    for_each = var.target_group_arn != null ? [1] : []
+    content {
+      target_group_arn = var.target_group_arn
+      container_name   = var.service_name
+      container_port   = var.container_port
+    }
   }
 
   dynamic "service_registries" {

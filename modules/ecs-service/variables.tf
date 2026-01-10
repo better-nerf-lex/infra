@@ -76,13 +76,15 @@ variable "max_capacity" {
 }
 
 variable "target_group_arn" {
-  description = "ARN of the target group"
+  description = "ARN of the target group (optional for internal-only services)"
   type        = string
+  default     = null
 }
 
 variable "alb_security_group_id" {
-  description = "Security group ID of the ALB"
+  description = "Security group ID of the ALB (optional for internal-only services)"
   type        = string
+  default     = null
 }
 
 variable "log_group_name" {
