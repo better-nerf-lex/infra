@@ -188,6 +188,10 @@ module "gateway_service" {
     AWS_REGION             = var.aws_region
     FILE_SERVICE_URL       = "http://file-service.${var.environment}.${var.project_name}.local:8080"
     ELASTICSEARCH_URL      = var.enable_elasticsearch ? "https://${module.opensearch[0].domain_endpoint}" : ""
+    ELASTICSEARCH_ENABLED  = var.enable_elasticsearch ? "true" : "false"
+    DB_HOST                = module.rds.db_endpoint
+    DB_PORT                = "5432"
+    DB_NAME                = "gateway"
   }
 
   service_registries = {
@@ -195,7 +199,6 @@ module "gateway_service" {
   }
 
   secrets = {
-    SPRING_R2DBC_URL            = "${module.rds.db_secret_arn}:host::"
     SPRING_R2DBC_USERNAME       = "${module.rds.db_secret_arn}:username::"
     SPRING_R2DBC_PASSWORD       = "${module.rds.db_secret_arn}:password::"
     SPRING_AI_ANTHROPIC_API_KEY = "${aws_secretsmanager_secret.gateway_secrets.arn}:anthropic_api_key::"
@@ -293,9 +296,12 @@ module "file_service" {
   }
 
   environment_variables = {
-    SPRING_PROFILES_ACTIVE = "prod"
-    AWS_REGION             = var.aws_region
-    ELASTICSEARCH_URL      = var.enable_elasticsearch ? "https://${module.opensearch[0].domain_endpoint}" : ""
+    NODE_ENV              = "production"
+    PORT                  = "8080"
+    AWS_REGION            = var.aws_region
+    AWS_S3_BUCKET         = "${var.environment}-${var.project_name}-documents"
+    ELASTICSEARCH_URL     = var.enable_elasticsearch ? "https://${module.opensearch[0].domain_endpoint}" : ""
+    ELASTICSEARCH_ENABLED = var.enable_elasticsearch ? "true" : "false"
   }
 
   depends_on = [module.alb, module.ecs_cluster]

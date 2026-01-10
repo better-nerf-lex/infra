@@ -4,7 +4,7 @@ output "service_name" {
 }
 
 output "service_id" {
-  description = "ID of the ECS service"
+  description = "ARN of the ECS service"
   value       = aws_ecs_service.main.id
 }
 
@@ -14,21 +14,21 @@ output "task_definition_arn" {
 }
 
 output "security_group_id" {
-  description = "Security group ID of the ECS tasks"
+  description = "ID of the security group for ECS tasks"
   value       = aws_security_group.ecs_tasks.id
 }
 
 output "task_role_arn" {
-  description = "ARN of the task role"
+  description = "ARN of the ECS task role"
   value       = aws_iam_role.ecs_task.arn
 }
 
-output "execution_role_arn" {
-  description = "ARN of the task execution role"
-  value       = aws_iam_role.ecs_task_execution.arn
+output "task_role_name" {
+  description = "Name of the ECS task role"
+  value       = aws_iam_role.ecs_task.name
 }
 
-output "target_group_arn" {
-  description = "ARN of the target group"
-  value       = var.target_group_arn
+output "execution_role_arn" {
+  description = "ARN of the ECS task execution role"
+  value       = aws_iam_role.ecs_task_execution.arn
 }
