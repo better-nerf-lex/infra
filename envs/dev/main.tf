@@ -131,6 +131,17 @@ resource "aws_security_group_rule" "opensearch_ingress_vpc" {
   description       = "Allow HTTPS from within VPC to OpenSearch"
 }
 
+resource "aws_security_group_rule" "opensearch_ingress_gateway" {
+  count                    = var.enable_elasticsearch ? 1 : 0
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = module.opensearch[0].security_group_id
+  source_security_group_id = module.gateway_service.security_group_id
+  description              = "Allow HTTPS from gateway to OpenSearch"
+}
+
 resource "aws_security_group_rule" "rds_ingress_gateway" {
   type                     = "ingress"
   from_port                = 5432

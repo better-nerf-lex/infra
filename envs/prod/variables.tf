@@ -136,13 +136,13 @@ variable "gateway_memory" {
 variable "gateway_desired_count" {
   description = "Gateway service desired task count"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "gateway_min_capacity" {
   description = "Gateway service minimum task count"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "gateway_max_capacity" {
