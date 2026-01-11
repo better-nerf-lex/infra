@@ -210,7 +210,6 @@ module "gateway_service" {
   alb_security_group_id = module.alb.alb_security_group_id
   log_group_name        = module.ecs_cluster.log_group_name
   aws_region            = var.aws_region
-  health_check_path     = "/api/actuator/health"
 
   environment_variables = {
     SPRING_PROFILES_ACTIVE = "prod"
