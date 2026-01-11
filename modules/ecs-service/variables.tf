@@ -64,25 +64,25 @@ variable "desired_count" {
 }
 
 variable "min_capacity" {
-  description = "Minimum number of tasks for auto-scaling"
+  description = "Minimum number of tasks for autoscaling"
   type        = number
   default     = 1
 }
 
 variable "max_capacity" {
-  description = "Maximum number of tasks for auto-scaling"
+  description = "Maximum number of tasks for autoscaling" 
   type        = number
-  default     = 4
+  default     = 3
 }
 
 variable "target_group_arn" {
-  description = "ARN of the target group (optional for internal-only services)"
+  description = "Target group ARN for load balancer"
   type        = string
   default     = null
 }
 
 variable "alb_security_group_id" {
-  description = "Security group ID of the ALB (optional for internal-only services)"
+  description = "Security group ID of the ALB"
   type        = string
   default     = null
 }
@@ -115,4 +115,10 @@ variable "service_registries" {
     registry_arn = string
   })
   default = null
+}
+
+variable "health_check_path" {
+  description = "Health check endpoint path"
+  type        = string
+  default     = "/actuator/health"
 }

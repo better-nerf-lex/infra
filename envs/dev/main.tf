@@ -318,6 +318,7 @@ module "file_service" {
   # No alb_security_group_id - internal service only
   log_group_name        = module.ecs_cluster.log_group_name
   aws_region            = var.aws_region
+  health_check_path     = "/health"
 
   service_registries = {
     registry_arn = aws_service_discovery_service.file_service.arn
