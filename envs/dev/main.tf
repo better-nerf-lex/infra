@@ -163,6 +163,23 @@ resource "aws_security_group_rule" "rds_ingress_payments" {
   description              = "Allow PostgreSQL from payments service"
 }
 
+# RDS schema initialization via Lambda
+module "rds_init" {
+  source = "../../modules/rds-init-lambda"
+
+  environment          = var.environment
+  project_name         = var.project_name
+  db_host              = module.rds.db_address
+  db_name              = module.rds.db_name
+  db_secret_arn        = module.rds.db_secret_arn
+  vpc_id               = module.vpc.vpc_id
+  private_subnet_ids   = module.vpc.private_subnet_ids
+  db_security_group_id = module.rds.db_security_group_id
+
+  depends_on = [module.rds]
+}
+
+
 module "iam" {
   source = "../../modules/iam"
 
