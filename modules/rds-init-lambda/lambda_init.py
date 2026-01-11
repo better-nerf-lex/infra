@@ -116,6 +116,7 @@ def lambda_handler(event, context):
         else:
             logger.info(f"Skipping seed data (environment={environment})")
         
+        
         logger.info("Schema initialization completed successfully")
         
         return {
