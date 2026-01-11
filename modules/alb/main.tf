@@ -64,7 +64,7 @@ resource "aws_lb_target_group" "gateway" {
     unhealthy_threshold = 3
     timeout             = 5
     interval            = 30
-    path                = "/actuator/health"
+    path                = "/api/actuator/health"
     matcher             = "200"
   }
 
