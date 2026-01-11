@@ -200,7 +200,7 @@ module "gateway_service" {
     FILE_SERVICE_URL       = "http://file-service.${var.environment}.${var.project_name}.local:8080"
     ELASTICSEARCH_URL      = var.enable_elasticsearch ? "https://${module.opensearch[0].domain_endpoint}" : ""
     ELASTICSEARCH_ENABLED  = var.enable_elasticsearch ? "true" : "false"
-    DB_HOST                = module.rds.db_endpoint
+    DB_HOST                = module.rds.db_address
     DB_PORT                = "5432"
     DB_NAME                = "gateway"
   }
