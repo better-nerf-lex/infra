@@ -82,6 +82,11 @@ resource "aws_cloudfront_distribution" "frontend" {
     default_ttl            = 0
     max_ttl                = 0
     compress               = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.api_path_rewrite.arn
+    }
   }
 
   ordered_cache_behavior {
@@ -170,6 +175,28 @@ resource "aws_cloudfront_function" "spa_routing" {
       if (!uri.includes('.')) {
         // If no extension, assume it's a route and serve index.html
         request.uri = '/index.html';
+      }
+
+      return request;
+    }
+  EOT
+}
+
+resource "aws_cloudfront_function" "api_path_rewrite" {
+  name    = "${var.environment}-${var.project_name}-api-path-rewrite"
+  runtime = "cloudfront-js-1.0"
+  comment = "Strip /api prefix from API requests"
+  publish = true
+  code    = <<-EOT
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+
+      // Strip /api prefix if present
+      if (uri.startsWith('/api/')) {
+        request.uri = uri.substring(4); // Remove '/api'
+      } else if (uri === '/api') {
+        request.uri = '/';
       }
 
       return request;
