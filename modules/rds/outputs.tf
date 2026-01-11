@@ -32,9 +32,3 @@ output "db_security_group_id" {
   description = "Security group ID of the RDS instance"
   value       = aws_security_group.rds.id
 }
-
-output "db_secret_arn" {
-  description = "ARN of the database credentials secret"
-  value       = aws_secretsmanager_secret.db_password.arn
-}
-
