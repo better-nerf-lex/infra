@@ -29,18 +29,6 @@ resource "aws_s3_object" "init_schema" {
   }
 }
 
-resource "aws_s3_object" "seed_data" {
-  bucket = aws_s3_bucket.schema_files.id
-  key    = "seed-data.sql"
-  source = "${path.module}/../../schema/seed-data.sql"
-  etag   = filemd5("${path.module}/../../schema/seed-data.sql")
-
-  tags = {
-    Name        = "seed-data"
-    Environment = var.environment
-  }
-}
-
 # Security group for Lambda
 resource "aws_security_group" "lambda" {
   name        = "${var.environment}-rds-init-lambda-sg"
@@ -191,7 +179,6 @@ resource "aws_lambda_function" "rds_init" {
       DB_SECRET_ARN   = var.db_secret_arn
       SCHEMA_BUCKET   = aws_s3_bucket.schema_files.id
       INIT_SCHEMA_KEY = aws_s3_object.init_schema.key
-      SEED_DATA_KEY   = aws_s3_object.seed_data.key
       ENVIRONMENT     = var.environment
     }
   }
@@ -201,7 +188,6 @@ resource "aws_lambda_function" "rds_init" {
   depends_on = [
     aws_iam_role_policy.lambda_policy,
     aws_s3_object.init_schema,
-    aws_s3_object.seed_data,
     aws_security_group_rule.lambda_to_rds
   ]
 
@@ -228,7 +214,6 @@ resource "aws_cloudwatch_log_group" "lambda_logs" {
 resource "null_resource" "invoke_lambda" {
   triggers = {
     schema_version      = filemd5("${path.module}/../../schema/init-schema.sql")
-    seed_data_version   = filemd5("${path.module}/../../schema/seed-data.sql")
     lambda_function_arn = aws_lambda_function.rds_init.arn
   }
 
@@ -245,8 +230,7 @@ resource "null_resource" "invoke_lambda" {
 
   depends_on = [
     aws_lambda_function.rds_init,
-    aws_s3_object.init_schema,
-    aws_s3_object.seed_data
+    aws_s3_object.init_schema
   ]
 }
 
