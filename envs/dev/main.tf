@@ -202,7 +202,7 @@ module "gateway_service" {
     ELASTICSEARCH_ENABLED  = var.enable_elasticsearch ? "true" : "false"
     DB_HOST                = module.rds.db_address
     DB_PORT                = "5432"
-    DB_NAME                = "gateway"
+    DB_NAME                = module.rds.db_name
   }
 
   service_registries = {
