@@ -8,6 +8,10 @@ module "cognito" {
   # SES email for verification emails (must be verified in SES first)
   ses_email_identity = var.ses_email_identity
 
+  # Google OAuth
+  google_client_id     = var.google_client_id
+  google_client_secret = var.google_client_secret
+
   # Post-authentication Lambda configuration
   post_auth_lambda_role_arn = aws_iam_role.cognito_post_auth_lambda.arn
   db_host                   = module.rds.db_address

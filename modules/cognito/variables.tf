@@ -48,7 +48,21 @@ variable "lambda_security_group_id" {
   type        = string
 }
 
-variable "psycopg2_layer_arn" {
-  description = "ARN of the psycopg2 Lambda layer from rds-init module"
+
+variable "google_client_id" {
+  description = "Google OAuth Client ID"
   type        = string
+  default     = ""
+}
+
+variable "psycopg2_layer_arn" {
+  description = "ARN of the psycopg2 Lambda layer"
+  type        = string
+}
+
+variable "google_client_secret" {
+  description = "Google OAuth Client Secret"
+  type        = string
+  sensitive   = true
+  default     = ""
 }

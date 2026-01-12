@@ -19,7 +19,7 @@ variable "aws_region" {
 variable "aws_profile" {
   description = "AWS profile to use for authentication"
   type        = string
-  default     = null
+  default     = "terraform"
 }
 
 variable "vpc_cidr" {
