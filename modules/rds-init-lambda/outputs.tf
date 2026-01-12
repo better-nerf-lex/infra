@@ -12,3 +12,8 @@ output "initialization_status" {
   description = "Status of schema initialization"
   value       = "Schema initialization Lambda deployed"
 }
+
+output "lambda_security_group_id" {
+  description = "Security group ID for Lambda function"
+  value       = aws_security_group.lambda.id
+}
