@@ -48,6 +48,56 @@ def execute_sql(connection, sql_content):
         raise
 
 
+def migrate_cognito_columns(connection):
+    """Add Cognito columns if they don't exist"""
+    try:
+        cursor = connection.cursor()
+        
+        # Check if cognito_sub column exists
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'users' AND column_name = 'cognito_sub'
+        """)
+        
+        if not cursor.fetchone():
+            logger.info("Adding cognito_sub column to users table")
+            cursor.execute("ALTER TABLE users ADD COLUMN cognito_sub VARCHAR(255) UNIQUE")
+            connection.commit()
+        
+        # Check if email_verified column exists
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'users' AND column_name = 'email_verified'
+        """)
+        
+        if not cursor.fetchone():
+            logger.info("Adding email_verified column to users table")
+            cursor.execute("ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT FALSE")
+            connection.commit()
+        
+        # Make password nullable
+        cursor.execute("""
+            SELECT is_nullable
+            FROM information_schema.columns 
+            WHERE table_name = 'users' AND column_name = 'password'
+        """)
+        result = cursor.fetchone()
+        if result and result[0] == 'NO':
+            logger.info("Making password column nullable")
+            cursor.execute("ALTER TABLE users ALTER COLUMN password DROP NOT NULL")
+            connection.commit()
+        
+        cursor.close()
+        logger.info("Cognito columns migration completed")
+        return True
+    except Exception as e:
+        logger.error(f"Error migrating Cognito columns: {e}")
+        connection.rollback()
+        raise
+
+
 def lambda_handler(event, context):
     """
     Lambda handler for RDS schema initialization
@@ -104,6 +154,10 @@ def lambda_handler(event, context):
         
         logger.info("Executing init schema")
         execute_sql(connection, init_schema_sql)
+        
+        # Run Cognito columns migration
+        logger.info("Running Cognito columns migration")
+        migrate_cognito_columns(connection)
         
         # Execute seed data only in dev environment
         if environment == 'dev' and seed_data_key:
