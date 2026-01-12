@@ -186,7 +186,8 @@ resource "aws_lb_listener_rule" "gateway" {
 
   condition {
     path_pattern {
-      values = ["/auth/*", "/cases/*", "/documents/*", "/users/*", "/actuator/*"]
+      # Route all paths to gateway - CloudFront already filters /api/* prefix
+      values = ["/*"]
     }
   }
 }
