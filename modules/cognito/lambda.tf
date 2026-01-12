@@ -4,7 +4,7 @@ resource "aws_lambda_function" "post_auth" {
   function_name = "${var.environment}-${var.project_name}-cognito-post-auth"
   role          = var.post_auth_lambda_role_arn
   handler       = "post_auth.handler"
-  runtime       = "python3.11"
+  runtime       = "python3.12"
   timeout       = 30
 
   source_code_hash = filebase64sha256("${path.module}/lambda/post_auth.zip")
