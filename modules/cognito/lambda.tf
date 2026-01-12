@@ -41,14 +41,3 @@ resource "aws_lambda_permission" "cognito_trigger" {
   principal     = "cognito-idp.amazonaws.com"
   source_arn    = aws_cognito_user_pool.main.arn
 }
-
-# Build script for Lambda zip
-resource "null_resource" "build_lambda" {
-  triggers = {
-    code_hash = filemd5("${path.module}/lambda/post_auth.py")
-  }
-
-  provisioner "local-exec" {
-    command = "cd ${path.module}/lambda && zip -j post_auth.zip post_auth.py"
-  }
-}
