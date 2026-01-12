@@ -18,5 +18,7 @@ module "cognito" {
   lambda_security_group_id  = module.rds_init.lambda_security_group_id
 
   depends_on = [module.rds, module.rds_init, aws_iam_role.cognito_post_auth_lambda]
+}
+
 # Note: RDS access is provided by reusing the rds_init.lambda_security_group_id
 # which already has ingress rules to the RDS security group
