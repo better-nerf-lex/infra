@@ -178,6 +178,9 @@ resource "aws_ecs_service" "main" {
   task_definition = aws_ecs_task_definition.main.arn
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
+  
+  # Allow time for app startup before ALB health checks fail the task
+  health_check_grace_period_seconds = var.target_group_arn != null ? 120 : null
 
   network_configuration {
     subnets          = var.private_subnet_ids
