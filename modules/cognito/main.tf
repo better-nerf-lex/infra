@@ -53,10 +53,11 @@ resource "aws_cognito_user_pool" "main" {
     }
   }
 
-  # Lambda triggers
-  lambda_config {
-    post_authentication = aws_lambda_function.post_auth.arn
-  }
+  # Lambda triggers - disabled due to psycopg2 layer issues
+  # Backend will create users on first API call instead
+  # lambda_config {
+  #   post_authentication = aws_lambda_function.post_auth.arn
+  # }
 
   tags = {
     Environment = var.environment
