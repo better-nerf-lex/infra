@@ -47,3 +47,8 @@ variable "lambda_security_group_id" {
   description = "Security group ID for Lambda"
   type        = string
 }
+
+variable "psycopg2_layer_arn" {
+  description = "ARN of the psycopg2 Lambda layer from rds-init module"
+  type        = string
+}

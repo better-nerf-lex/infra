@@ -15,7 +15,8 @@ module "cognito" {
   db_name                   = module.rds.db_name
   vpc_id                    = module.vpc.vpc_id
   private_subnet_ids        = module.vpc.private_subnet_ids
-  lambda_security_group_id  = module.rds_init.lambda_security_group_id
+  lambda_security_group_id = module.rds_init.lambda_security_group_id
+  psycopg2_layer_arn       = module.rds_init.psycopg2_layer_arn
 
   depends_on = [module.rds, module.rds_init, aws_iam_role.cognito_post_auth_lambda]
 }

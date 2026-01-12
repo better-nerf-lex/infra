@@ -23,7 +23,7 @@ resource "aws_lambda_function" "post_auth" {
     }
   }
 
-  layers = [aws_lambda_layer_version.psycopg2.arn]
+  layers = [var.psycopg2_layer_arn]
 
   tags = {
     Environment = var.environment
@@ -31,15 +31,7 @@ resource "aws_lambda_function" "post_auth" {
   }
 }
 
-# Psycopg2 layer for database connectivity
-resource "aws_lambda_layer_version" "psycopg2" {
-  filename   = "${path.module}/lambda/psycopg2-layer.zip"
-  layer_name = "${var.environment}-${var.project_name}-psycopg2"
-
-  compatible_runtimes = ["python3.11"]
-
-  source_code_hash = filebase64sha256("${path.module}/lambda/psycopg2-layer.zip")
-}
+# Psycopg2 layer is passed in from rds-init module to avoid duplication
 
 # Permission for Cognito to invoke Lambda
 resource "aws_lambda_permission" "cognito_trigger" {
