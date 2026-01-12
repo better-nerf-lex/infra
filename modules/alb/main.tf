@@ -186,7 +186,7 @@ resource "aws_lb_listener_rule" "gateway" {
 
   condition {
     path_pattern {
-      values = ["/*"]
+      values = ["/auth/*", "/cases/*", "/documents/*", "/users/*", "/teams/*", "/actuator/*", "/oauth2/*"]
     }
   }
 }
