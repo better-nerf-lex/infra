@@ -220,6 +220,8 @@ module "gateway_service" {
     DB_HOST                = module.rds.db_address
     DB_PORT                = "5432"
     DB_NAME                = module.rds.db_name
+    COGNITO_USER_POOL_ID   = module.cognito.user_pool_id
+    COGNITO_CLIENT_ID      = module.cognito.user_pool_client_id
   }
 
   service_registries = {
