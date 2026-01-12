@@ -18,15 +18,5 @@ module "cognito" {
   lambda_security_group_id  = module.rds_init.lambda_security_group_id
 
   depends_on = [module.rds, module.rds_init, aws_iam_role.cognito_post_auth_lambda]
-}
-
-# Allow post-auth Lambda to access RDS
-resource "aws_security_group_rule" "rds_ingress_cognito_lambda" {
-  type                     = "ingress"
-  from_port                = 5432
-  to_port                  = 5432
-  protocol                 = "tcp"
-  security_group_id        = module.rds.db_security_group_id
-  source_security_group_id = module.rds_init.lambda_security_group_id
-  description              = "Allow PostgreSQL from Cognito post-auth Lambda"
-}
+# Note: RDS access is provided by reusing the rds_init.lambda_security_group_id
+# which already has ingress rules to the RDS security group
