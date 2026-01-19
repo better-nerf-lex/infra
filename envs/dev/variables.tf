@@ -148,7 +148,7 @@ variable "gateway_min_capacity" {
 variable "gateway_max_capacity" {
   description = "Gateway service maximum task count"
   type        = number
-  default     = 3
+  default     = 1
 }
 
 variable "enable_payments_service" {
