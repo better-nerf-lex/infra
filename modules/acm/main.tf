@@ -47,7 +47,6 @@ resource "aws_acm_certificate_validation" "api" {
   certificate_arn         = aws_acm_certificate.api[0].arn
   validation_record_fqdns = [for record in aws_route53_record.api_cert_validation : record.fqdn]
 }
-
 resource "aws_acm_certificate" "frontend" {
   count    = local.create_frontend_certificate ? 1 : 0
   provider = aws.us_east_1
