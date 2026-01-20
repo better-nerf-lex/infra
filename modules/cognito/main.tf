@@ -102,21 +102,27 @@ resource "aws_cognito_user_pool_client" "main" {
   allowed_oauth_flows                  = ["code", "implicit"]
   allowed_oauth_scopes                 = ["email", "openid", "profile"]
 
-  # Callback URLs (update with your frontend URL)
+  # Callback URLs (must match Amplify redirectSignIn EXACTLY, including trailing slashes)
   callback_urls = [
     "https://test-0.paragrafic.pl",
+    "https://test-0.paragrafic.pl/",
     "https://paragrafic.pl",
-    "http://localhost:8080/auth/oauth2/success",
+    "https://paragrafic.pl/",
     "http://localhost:5173",
-    "http://localhost:5173/"
+    "http://localhost:5173/",
+    "http://localhost:8080",
+    "http://localhost:8080/"
   ]
 
   logout_urls = [
     "https://test-0.paragrafic.pl",
+    "https://test-0.paragrafic.pl/",
     "https://paragrafic.pl",
-    "http://localhost:8080",
+    "https://paragrafic.pl/",
     "http://localhost:5173",
-    "http://localhost:5173/"
+    "http://localhost:5173/",
+    "http://localhost:8080",
+    "http://localhost:8080/"
   ]
 
   # Token validity
