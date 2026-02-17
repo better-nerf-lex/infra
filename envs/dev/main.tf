@@ -403,13 +403,15 @@ module "subscription_service" {
   }
 
   environment_variables = {
-    NODE_ENV              = "production"
-    PORT                  = "8080"
-    AWS_REGION            = var.aws_region
-    DB_HOST               = module.rds.db_address
-    DB_PORT               = "5432"
-    DB_NAME               = "subscription_service"
-    GATEWAY_SERVICE_URL   = "http://gateway.${var.environment}.${var.project_name}.local:8080"
+    NODE_ENV                    = "production"
+    PORT                        = "8080"
+    AWS_REGION                  = var.aws_region
+    DB_HOST                     = module.rds.db_address
+    DB_PORT                     = "5432"
+    DB_NAME                     = "subscription_service"
+    DB_SSL                      = "true"
+    DB_SSL_REJECT_UNAUTHORIZED  = "false"
+    GATEWAY_SERVICE_URL         = "http://gateway.${var.environment}.${var.project_name}.local:8080"
   }
 
   secrets = {
