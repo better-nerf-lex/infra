@@ -223,6 +223,9 @@ module "gateway_service" {
     DB_NAME                = module.rds.db_name
     COGNITO_USER_POOL_ID   = module.cognito.user_pool_id
     COGNITO_CLIENT_ID      = module.cognito.user_pool_client_id
+    POSTMARK_API_TOKEN     = var.postmark_api_token
+    EMAIL_FROM             = var.email_from
+    EMAIL_ENABLED          = var.email_enabled
   }
 
   service_registries = {

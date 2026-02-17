@@ -283,3 +283,21 @@ variable "google_client_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "postmark_api_token" {
+  description = "Postmark API token for sending emails"
+  type        = string
+  sensitive   = true
+}
+
+variable "email_from" {
+  description = "From email address for sending emails"
+  type        = string
+  default     = "noreply@paragrafic.pl"
+}
+
+variable "email_enabled" {
+  description = "Enable email sending functionality"
+  type        = string
+  default     = "true"
+}
