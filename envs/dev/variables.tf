@@ -55,7 +55,7 @@ variable "api_domain" {
 variable "repository_names" {
   description = "List of ECR repository names"
   type        = list(string)
-  default     = ["gateway", "file-service", "paragrafic-front"]
+  default     = ["gateway", "file-service", "subscription-service", "paragrafic-front"]
 }
 
 variable "image_retention_count" {
@@ -259,6 +259,42 @@ variable "file_service_max_capacity" {
   default     = 3
 }
 
+variable "subscription_service_image_uri" {
+  description = "Subscription service Docker image URI"
+  type        = string
+  default     = ""
+}
+
+variable "subscription_service_cpu" {
+  description = "Subscription service CPU units"
+  type        = number
+  default     = 256
+}
+
+variable "subscription_service_memory" {
+  description = "Subscription service memory in MB"
+  type        = number
+  default     = 512
+}
+
+variable "subscription_service_desired_count" {
+  description = "Subscription service desired task count"
+  type        = number
+  default     = 1
+}
+
+variable "subscription_service_min_capacity" {
+  description = "Subscription service minimum task count"
+  type        = number
+  default     = 1
+}
+
+variable "subscription_service_max_capacity" {
+  description = "Subscription service maximum task count"
+  type        = number
+  default     = 3
+}
+
 
 variable "anthropic_api_key" {
   description = "Anthropic API Key"
@@ -300,4 +336,18 @@ variable "email_enabled" {
   description = "Enable email sending functionality"
   type        = string
   default     = "true"
+}
+
+variable "stripe_api_key" {
+  description = "Stripe API key for payment processing"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "stripe_webhook_secret" {
+  description = "Stripe webhook signing secret"
+  type        = string
+  sensitive   = true
+  default     = ""
 }

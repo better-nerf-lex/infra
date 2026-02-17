@@ -58,3 +58,18 @@ output "gateway_service_name" {
   description = "Gateway service name"
   value       = module.gateway_service.service_name
 }
+
+output "file_service_name" {
+  description = "File service name"
+  value       = module.file_service.service_name
+}
+
+output "subscription_service_name" {
+  description = "Subscription service name"
+  value       = module.subscription_service.service_name
+}
+
+output "subscription_service_url" {
+  description = "Subscription service internal URL"
+  value       = "http://subscription-service.${var.environment}.${var.project_name}.local:8080"
+}

@@ -163,6 +163,16 @@ resource "aws_security_group_rule" "rds_ingress_payments" {
   description              = "Allow PostgreSQL from payments service"
 }
 
+resource "aws_security_group_rule" "rds_ingress_subscription" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = module.rds.db_security_group_id
+  source_security_group_id = module.subscription_service.security_group_id
+  description              = "Allow PostgreSQL from subscription service"
+}
+
 # RDS schema initialization via Lambda
 module "rds_init" {
   source = "../../modules/rds-init-lambda"
@@ -252,10 +262,12 @@ resource "aws_secretsmanager_secret" "gateway_secrets" {
 resource "aws_secretsmanager_secret_version" "gateway_secrets" {
   secret_id = aws_secretsmanager_secret.gateway_secrets.id
   secret_string = jsonencode({
-    anthropic_api_key    = var.anthropic_api_key
-    jwt_secret           = var.jwt_secret
-    google_client_id     = var.google_client_id
-    google_client_secret = var.google_client_secret
+    anthropic_api_key     = var.anthropic_api_key
+    jwt_secret            = var.jwt_secret
+    google_client_id      = var.google_client_id
+    google_client_secret  = var.google_client_secret
+    stripe_api_key        = var.stripe_api_key
+    stripe_webhook_secret = var.stripe_webhook_secret
   })
 }
 
@@ -337,6 +349,74 @@ module "file_service" {
     AWS_S3_BUCKET         = "${var.environment}-${var.project_name}-documents"
     ELASTICSEARCH_URL     = var.enable_elasticsearch ? "https://${module.opensearch[0].domain_endpoint}" : ""
     ELASTICSEARCH_ENABLED = var.enable_elasticsearch ? "true" : "false"
+  }
+
+  depends_on = [module.ecs_cluster]
+}
+
+# Service discovery for subscription-service
+resource "aws_service_discovery_service" "subscription_service" {
+  name = "subscription-service"
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.internal.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_custom_config {
+    failure_threshold = 1
+  }
+}
+
+# Subscription service - handles Stripe subscriptions
+module "subscription_service" {
+  source = "../../modules/ecs-service"
+
+  environment           = var.environment
+  project_name          = var.project_name
+  service_name          = "subscription-service"
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  cluster_id            = module.ecs_cluster.cluster_id
+  cluster_name          = module.ecs_cluster.cluster_name
+  image_uri             = var.subscription_service_image_uri
+  container_port        = 8080
+  cpu                   = var.subscription_service_cpu
+  memory                = var.subscription_service_memory
+  desired_count         = var.subscription_service_desired_count
+  min_capacity          = var.subscription_service_min_capacity
+  max_capacity          = var.subscription_service_max_capacity
+  # No target_group_arn - internal service only
+  # No alb_security_group_id - internal service only
+  log_group_name        = module.ecs_cluster.log_group_name
+  aws_region            = var.aws_region
+  health_check_path     = "/health"
+
+  service_registries = {
+    registry_arn = aws_service_discovery_service.subscription_service.arn
+  }
+
+  environment_variables = {
+    NODE_ENV              = "production"
+    PORT                  = "8080"
+    AWS_REGION            = var.aws_region
+    DB_HOST               = module.rds.db_address
+    DB_PORT               = "5432"
+    DB_NAME               = "subscription_service"
+    GATEWAY_SERVICE_URL   = "http://gateway.${var.environment}.${var.project_name}.local:8080"
+  }
+
+  secrets = {
+    DB_USERNAME           = "${module.rds.db_secret_arn}:username::"
+    DB_PASSWORD           = "${module.rds.db_secret_arn}:password::"
+    STRIPE_API_KEY        = "${aws_secretsmanager_secret.gateway_secrets.arn}:stripe_api_key::"
+    STRIPE_WEBHOOK_SECRET = "${aws_secretsmanager_secret.gateway_secrets.arn}:stripe_webhook_secret::"
   }
 
   depends_on = [module.ecs_cluster]
