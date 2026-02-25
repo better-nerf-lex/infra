@@ -55,7 +55,9 @@ jobs:
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_google_client_id: ${{ secrets.TF_VAR_GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.TF_VAR_GOOGLE_CLIENT_SECRET }}
-          TF_VAR_postmark_api_key: ${{ secrets.TF_VAR_POSTMARK_API_KEY }}
+          TF_VAR_postmark_api_token: ${{ secrets.TF_VAR_POSTMARK_API_TOKEN }}
+          TF_VAR_stripe_api_key: ${{ secrets.TF_VAR_STRIPE_API_KEY }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_STRIPE_WEBHOOK_SECRET }}
       
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
@@ -64,7 +66,9 @@ jobs:
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_google_client_id: ${{ secrets.TF_VAR_GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.TF_VAR_GOOGLE_CLIENT_SECRET }}
-          TF_VAR_postmark_api_key: ${{ secrets.TF_VAR_POSTMARK_API_KEY }}
+          TF_VAR_postmark_api_token: ${{ secrets.TF_VAR_POSTMARK_API_TOKEN }}
+          TF_VAR_stripe_api_key: ${{ secrets.TF_VAR_STRIPE_API_KEY }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_STRIPE_WEBHOOK_SECRET }}
       
       - name: Output Results
         run: |
