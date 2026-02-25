@@ -386,14 +386,14 @@ module "subscription_service" {
   cluster_id            = module.ecs_cluster.cluster_id
   cluster_name          = module.ecs_cluster.cluster_name
   image_uri             = var.subscription_service_image_uri
-  container_port        = 8080
+  container_port        = 3002
   cpu                   = var.subscription_service_cpu
   memory                = var.subscription_service_memory
   desired_count         = var.subscription_service_desired_count
   min_capacity          = var.subscription_service_min_capacity
   max_capacity          = var.subscription_service_max_capacity
-  # No target_group_arn - internal service only
-  # No alb_security_group_id - internal service only
+  target_group_arn      = module.alb.subscription_webhook_target_group_arn
+  alb_security_group_id = module.alb.alb_security_group_id
   log_group_name        = module.ecs_cluster.log_group_name
   aws_region            = var.aws_region
   health_check_path     = "/health"

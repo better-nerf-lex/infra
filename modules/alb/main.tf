@@ -104,8 +104,32 @@ resource "aws_lb_target_group" "payments" {
   }
 }
 
+resource "aws_lb_target_group" "subscription_webhook" {
+  name        = "${var.environment}-sub-webhook-tg"
+  port        = 3002
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
 
-# File service target group not needed - service is internal only
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    timeout             = 5
+    interval            = 30
+    path                = "/health"
+    matcher             = "200"
+  }
+
+  deregistration_delay = 30
+
+  tags = {
+    Name        = "${var.environment}-sub-webhook-tg"
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
 # File service is accessed via AWS Cloud Map service discovery
 # URL: http://file-service.dev.paragrafic.local:8080
 
@@ -188,6 +212,23 @@ resource "aws_lb_listener_rule" "gateway" {
     path_pattern {
       # Route all paths to gateway - CloudFront already filters /api/* prefix
       values = ["/*"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "subscription_webhook" {
+  count        = var.certificate_arn != "" ? 1 : 0
+  listener_arn = aws_lb_listener.https[0].arn
+  priority     = 90
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.subscription_webhook.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/webhooks/stripe"]
     }
   }
 }
