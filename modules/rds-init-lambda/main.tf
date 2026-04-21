@@ -222,15 +222,24 @@ resource "null_resource" "invoke_lambda" {
     command = <<-EOT
       echo "Waiting for Lambda to be ready..."
       for i in $(seq 1 12); do
-        RESULT=$(aws lambda invoke \
+        aws lambda invoke \
           --function-name ${aws_lambda_function.rds_init.function_name} \
           --payload '{}' \
           --region ${data.aws_region.current.name} \
-          /tmp/lambda-response.json 2>&1) && break
-        echo "Attempt $i failed: $RESULT — retrying in 15s..."
-        sleep 15
+          /tmp/lambda-response.json
+          
+        if grep -q "FunctionError" /tmp/lambda-response.json; then
+          echo "Attempt $i failed due to FunctionError. Response:"
+          cat /tmp/lambda-response.json
+          sleep 15
+        else
+          echo "Lambda executed successfully."
+          cat /tmp/lambda-response.json
+          exit 0
+        fi
       done
-      cat /tmp/lambda-response.json
+      echo "Lambda failed to initialize database after 12 attempts."
+      exit 1
     EOT
   }
 
