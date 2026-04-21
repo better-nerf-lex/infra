@@ -3,9 +3,7 @@ name: Terraform Dev Deployment
 on:
   push:
     branches:
-      - develop
-    paths:
-      - 'infra/**'
+      - dev
   workflow_dispatch:
 
 permissions:
@@ -24,7 +22,7 @@ jobs:
     
     defaults:
       run:
-        working-directory: infra/envs/dev
+        working-directory: envs/dev
     
     steps:
       - name: Checkout code
@@ -49,13 +47,13 @@ jobs:
         run: terraform validate
       
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan -var-file=dev.tfvars -out=tfplan
         env:
           TF_VAR_anthropic_api_key: ${{ secrets.TF_VAR_ANTHROPIC_API_KEY }}
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_google_client_id: ${{ secrets.TF_VAR_GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.TF_VAR_GOOGLE_CLIENT_SECRET }}
-          TF_VAR_postmark_api_token: ${{ secrets.TF_VAR_POSTMARK_API_TOKEN }}
+          TF_VAR_postmark_api_token: ${{ secrets.TF_VAR_POSTMARK_API_KEY }}
           TF_VAR_stripe_api_key: ${{ secrets.TF_VAR_STRIPE_API_KEY }}
           TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_STRIPE_WEBHOOK_SECRET }}
       
@@ -66,7 +64,7 @@ jobs:
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_google_client_id: ${{ secrets.TF_VAR_GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.TF_VAR_GOOGLE_CLIENT_SECRET }}
-          TF_VAR_postmark_api_token: ${{ secrets.TF_VAR_POSTMARK_API_TOKEN }}
+          TF_VAR_postmark_api_token: ${{ secrets.TF_VAR_POSTMARK_API_KEY }}
           TF_VAR_stripe_api_key: ${{ secrets.TF_VAR_STRIPE_API_KEY }}
           TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_STRIPE_WEBHOOK_SECRET }}
       

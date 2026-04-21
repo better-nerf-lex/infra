@@ -17,9 +17,9 @@ variable "aws_region" {
 }
 
 variable "aws_profile" {
-  description = "AWS profile to use for authentication"
+  description = "AWS profile to use for authentication (leave empty for CI/CD)"
   type        = string
-  default     = "terraform"
+  default     = ""
 }
 
 variable "vpc_cidr" {
@@ -342,12 +342,10 @@ variable "stripe_api_key" {
   description = "Stripe API key for payment processing"
   type        = string
   sensitive   = true
-  default     = ""
 }
 
 variable "stripe_webhook_secret" {
   description = "Stripe webhook signing secret"
   type        = string
   sensitive   = true
-  default     = ""
 }

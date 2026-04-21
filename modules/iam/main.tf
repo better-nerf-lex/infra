@@ -140,3 +140,65 @@ resource "aws_iam_role_policy" "github_actions_s3_cloudfront" {
     ]
   })
 }
+
+resource "aws_iam_role_policy" "github_actions_terraform" {
+  name = "${var.environment}-github-actions-terraform-policy"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "TerraformStateAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.project_name}-terraform-state-${var.environment}",
+          "arn:aws:s3:::${var.project_name}-terraform-state-${var.environment}/*"
+        ]
+      },
+      {
+        Sid    = "TerraformLockAccess"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeTable"
+        ]
+        Resource = "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.project_name}-terraform-locks-${var.environment}"
+      },
+      {
+        Sid    = "TerraformInfraManagement"
+        Effect = "Allow"
+        Action = [
+          "ec2:*",
+          "rds:*",
+          "ecs:*",
+          "ecr:*",
+          "elasticloadbalancing:*",
+          "secretsmanager:*",
+          "cognito-idp:*",
+          "s3:*",
+          "cloudfront:*",
+          "logs:*",
+          "lambda:*",
+          "servicediscovery:*",
+          "es:*",
+          "aoss:*",
+          "acm:*",
+          "route53:*",
+          "iam:*",
+          "application-autoscaling:*",
+          "sts:GetCallerIdentity"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}

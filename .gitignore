@@ -13,6 +13,10 @@ crash.*.log
 *.tfvars
 *.tfvars.json
 
+# Allow environment-specific non-sensitive tfvars to be committed
+!envs/dev/dev.tfvars
+!envs/prod/prod.tfvars
+
 # Ignore override files as they are usually used to override resources locally
 override.tf
 override.tf.json

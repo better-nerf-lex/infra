@@ -144,6 +144,22 @@ resource "aws_security_group_rule" "rds_ingress_payments" {
   description              = "Allow PostgreSQL from payments service"
 }
 
+module "rds_init" {
+  source = "../../modules/rds-init-lambda"
+
+  environment          = var.environment
+  project_name         = var.project_name
+  db_host              = module.rds.db_address
+  db_name              = module.rds.db_name
+  db_secret_arn        = module.rds.db_secret_arn
+  vpc_id               = module.vpc.vpc_id
+  private_subnet_ids   = module.vpc.private_subnet_ids
+  db_security_group_id = module.rds.db_security_group_id
+  db_instance_id       = module.rds.db_instance_id
+
+  depends_on = [module.rds]
+}
+
 module "iam" {
   source = "../../modules/iam"
 
@@ -186,7 +202,7 @@ module "gateway_service" {
     SPRING_R2DBC_PASSWORD = "${module.rds.db_secret_arn}:password::"
   }
 
-  depends_on = [module.alb, module.ecs_cluster]
+  depends_on = [module.alb, module.ecs_cluster, module.rds_init]
 }
 
 # Payments service (disabled by default, enable via variable)
@@ -224,5 +240,5 @@ module "payments_service" {
     SPRING_R2DBC_PASSWORD = "${module.rds.db_secret_arn}:password::"
   }
 
-  depends_on = [module.alb, module.ecs_cluster]
+  depends_on = [module.alb, module.ecs_cluster, module.rds_init]
 }

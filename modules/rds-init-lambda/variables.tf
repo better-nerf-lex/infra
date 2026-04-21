@@ -38,3 +38,8 @@ variable "db_security_group_id" {
   description = "Security group ID of the RDS instance"
   type        = string
 }
+
+variable "db_instance_id" {
+  description = "RDS instance ID — used to re-trigger schema init when the DB is recreated"
+  type        = string
+}

@@ -24,7 +24,7 @@ jobs:
     
     defaults:
       run:
-        working-directory: infra/envs/prod
+        working-directory: envs/prod
     
     steps:
       - name: Checkout code

@@ -14,14 +14,12 @@ terraform {
     region         = "eu-north-1"
     encrypt        = true
     dynamodb_table = "paragrafic-terraform-locks-dev"
-    # Uncomment and set your AWS profile name if not using default credentials:
-    profile = "terraform"
   }
 }
 
 provider "aws" {
   region  = var.aws_region
-  profile = var.aws_profile
+  profile = var.aws_profile != "" ? var.aws_profile : null
 
   default_tags {
     tags = {
@@ -36,7 +34,7 @@ provider "aws" {
 provider "aws" {
   alias   = "us_east_1"
   region  = "us-east-1"
-  profile = var.aws_profile
+  profile = var.aws_profile != "" ? var.aws_profile : null
 
   default_tags {
     tags = {

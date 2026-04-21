@@ -215,15 +215,21 @@ resource "null_resource" "invoke_lambda" {
   triggers = {
     schema_version      = filemd5("${path.module}/../../schema/init-schema.sql")
     lambda_function_arn = aws_lambda_function.rds_init.arn
+    db_instance_id      = var.db_instance_id
   }
 
   provisioner "local-exec" {
     command = <<-EOT
-      aws lambda invoke \
-        --function-name ${aws_lambda_function.rds_init.function_name} \
-        --payload '{}' \
-        --region ${data.aws_region.current.name} \
-        /tmp/lambda-response.json
+      echo "Waiting for Lambda to be ready..."
+      for i in $(seq 1 12); do
+        RESULT=$(aws lambda invoke \
+          --function-name ${aws_lambda_function.rds_init.function_name} \
+          --payload '{}' \
+          --region ${data.aws_region.current.name} \
+          /tmp/lambda-response.json 2>&1) && break
+        echo "Attempt $i failed: $RESULT — retrying in 15s..."
+        sleep 15
+      done
       cat /tmp/lambda-response.json
     EOT
   }

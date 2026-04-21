@@ -10,10 +10,18 @@ Navigate to your GitHub repository → **Settings** → **Secrets and variables*
 
 | Secret Name | Description | How to Get |
 |------------|-------------|------------|
-| `AWS_ROLE_ARN_DEV` | GitHub Actions role ARN for dev environment | Run: `cd infra/envs/dev && terraform output github_actions_role_arn` |
-| `AWS_ROLE_ARN_PROD` | GitHub Actions role ARN for prod environment | Run: `cd infra/envs/prod && terraform output github_actions_role_arn` |
+| `AWS_ACCESS_KEY_ID` | AWS access key (fallback auth) | AWS IAM Console |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key (fallback auth) | AWS IAM Console |
+| `AWS_REGION` | AWS region | `eu-north-1` |
+| `AWS_ROLE_ARN_DEV` | GitHub Actions role ARN for dev | Run: `cd envs/dev && terraform output github_actions_role_arn` |
 
-### Terraform Variables
+### Environment Variables (non-secret)
+
+| Variable Name | Description | Value |
+|------------|-------------|--------|
+| `AWS_ACTIONS_ROLE_ARN` | GitHub Actions role ARN | Same as `AWS_ROLE_ARN_DEV` |
+
+### Terraform Variables (Required)
 
 | Secret Name | Description | Source |
 |------------|-------------|--------|
@@ -22,6 +30,8 @@ Navigate to your GitHub repository → **Settings** → **Secrets and variables*
 | `TF_VAR_GOOGLE_CLIENT_ID` | Google OAuth client ID | [Google Cloud Console](https://console.cloud.google.com/) |
 | `TF_VAR_GOOGLE_CLIENT_SECRET` | Google OAuth client secret | [Google Cloud Console](https://console.cloud.google.com/) |
 | `TF_VAR_POSTMARK_API_KEY` | Postmark email service API key | [Postmark Account](https://account.postmarkapp.com/) |
+| `TF_VAR_STRIPE_API_KEY` | Stripe API key for payments | [Stripe Dashboard](https://dashboard.stripe.com/) |
+| `TF_VAR_STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret | [Stripe Webhooks](https://dashboard.stripe.com/webhooks) |
 
 ## GitHub Environment Protection (Production)
 
@@ -36,7 +46,20 @@ This ensures production deployments wait for manual approval before applying Ter
 
 ## Workflow Triggers
 
-- **Dev**: Automatically deploys on merge to `develop` branch (when `infra/**` files change)
-- **Prod**: Automatically deploys on merge to `main` branch (when `infra/**` files change), requires manual approval
+- **Dev**: Automatically deploys on push to `dev` branch
+- **Prod**: Automatically deploys on push to `main` branch, requires manual approval
 
 Both workflows can also be triggered manually via **Actions** → **Workflow** → **Run workflow**
+
+## Local Development
+
+For local `terraform apply`, use the committed `dev.tfvars` file which includes `aws_profile = "terraform"`:
+
+```bash
+cd envs/dev
+terraform init
+terraform plan -var-file=dev.tfvars -var="anthropic_api_key=..." -var="jwt_secret=..." ...
+terraform apply -var-file=dev.tfvars -var="anthropic_api_key=..." -var="jwt_secret=..." ...
+```
+
+Or create a local `terraform.tfvars` (gitignored) with all values including secrets for convenience.

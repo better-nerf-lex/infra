@@ -185,6 +185,7 @@ module "rds_init" {
   vpc_id               = module.vpc.vpc_id
   private_subnet_ids   = module.vpc.private_subnet_ids
   db_security_group_id = module.rds.db_security_group_id
+  db_instance_id       = module.rds.db_instance_id
 
   depends_on = [module.rds]
 }
