@@ -216,6 +216,7 @@ resource "null_resource" "invoke_lambda" {
     schema_version      = filemd5("${path.module}/../../schema/init-schema.sql")
     lambda_function_arn = aws_lambda_function.rds_init.arn
     db_instance_id      = var.db_instance_id
+    force_run           = "1" # Added to force execution on next apply to fix uninitialized DB
   }
 
   provisioner "local-exec" {
@@ -226,10 +227,13 @@ resource "null_resource" "invoke_lambda" {
           --function-name ${aws_lambda_function.rds_init.function_name} \
           --payload '{}' \
           --region ${data.aws_region.current.name} \
-          /tmp/lambda-response.json
+          --cli-binary-format raw-in-base64-out \
+          /tmp/lambda-response.json > /tmp/lambda-meta.json
           
-        if grep -q "FunctionError" /tmp/lambda-response.json; then
-          echo "Attempt $i failed due to FunctionError. Response:"
+        if grep -q '"statusCode": 500' /tmp/lambda-response.json || grep -q "FunctionError" /tmp/lambda-meta.json; then
+          echo "Attempt $i failed. Meta:"
+          cat /tmp/lambda-meta.json
+          echo "Response:"
           cat /tmp/lambda-response.json
           sleep 15
         else

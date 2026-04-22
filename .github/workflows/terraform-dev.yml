@@ -47,7 +47,7 @@ jobs:
         run: terraform validate
       
       - name: Terraform Plan
-        run: terraform plan -var-file=dev.tfvars -out=tfplan
+        run: terraform plan -var-file=dev.tfvars -var 'aws_profile=' -out=tfplan
         env:
           TF_VAR_anthropic_api_key: ${{ secrets.TF_VAR_ANTHROPIC_API_KEY }}
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
@@ -56,7 +56,7 @@ jobs:
           TF_VAR_postmark_api_token: ${{ secrets.TF_VAR_POSTMARK_API_KEY }}
           TF_VAR_stripe_api_key: ${{ secrets.TF_VAR_STRIPE_API_KEY }}
           TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_STRIPE_WEBHOOK_SECRET }}
-      
+
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
         env:
