@@ -1,12 +1,9 @@
--- Production-Safe RDS Schema Initialization
--- This script is idempotent and safe to run multiple times
-
 CREATE TABLE IF NOT EXISTS users
 (
     id              BIGSERIAL PRIMARY KEY,
     username        VARCHAR(255) UNIQUE NOT NULL,
     email           VARCHAR(255) UNIQUE NOT NULL,
-    password        VARCHAR(255),
+    password        VARCHAR(255)        NOT NULL,
     cognito_sub     VARCHAR(255) UNIQUE,
     email_verified  BOOLEAN   DEFAULT FALSE,
     enabled         BOOLEAN   DEFAULT TRUE,
@@ -137,7 +134,7 @@ ALTER TABLE document_groups ADD CONSTRAINT document_groups_case_id_fkey FOREIGN 
 CREATE TABLE IF NOT EXISTS case_parties
 (
     case_id         UUID         NOT NULL REFERENCES cases (id) ON DELETE CASCADE,
-   legal_entity_id UUID         NOT NULL REFERENCES legal_entities (id) ON DELETE CASCADE,
+    legal_entity_id UUID         NOT NULL REFERENCES legal_entities (id) ON DELETE CASCADE,
     role            VARCHAR(20) NOT NULL CHECK (role IN ('DEFENDANT', 'PLAINTIFF', 'OTHER')),
     PRIMARY KEY (case_id, legal_entity_id, role)
 );
@@ -205,6 +202,20 @@ CREATE TABLE IF NOT EXISTS team_members
     version      INTEGER     NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS team_invitations
+(
+    id           UUID PRIMARY KEY,
+    team_id      UUID         NOT NULL REFERENCES teams (id),
+    email        VARCHAR(255) NOT NULL,
+    access_level VARCHAR(50)  NOT NULL,
+    token        VARCHAR(255) UNIQUE NOT NULL,
+    status       VARCHAR(20)  NOT NULL CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED')),
+    invited_by   BIGINT       NOT NULL REFERENCES users (id),
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at   TIMESTAMP    NOT NULL,
+    version      INTEGER      NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS authorization_codes
 (
     id           VARCHAR(255) PRIMARY KEY,
@@ -218,7 +229,7 @@ CREATE TABLE IF NOT EXISTS authorization_codes
     used         BOOLEAN   DEFAULT FALSE
 );
 
--- Indices for performance
+-- Indices and full-text search
 CREATE INDEX IF NOT EXISTS idx_documents_status ON documents (status);
 CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents (created_at);
 CREATE INDEX IF NOT EXISTS idx_document_history_document_id ON document_history (document_id);
@@ -230,6 +241,9 @@ CREATE INDEX IF NOT EXISTS idx_legal_entities_owner_id ON legal_entities (owner_
 CREATE INDEX IF NOT EXISTS idx_legal_entities_team_id ON legal_entities (team_id);
 CREATE INDEX IF NOT EXISTS idx_team_members_user_id ON team_members (user_id);
 CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members (team_id);
+CREATE INDEX IF NOT EXISTS idx_team_invitations_token ON team_invitations (token);
+CREATE INDEX IF NOT EXISTS idx_team_invitations_email ON team_invitations (email);
+CREATE INDEX IF NOT EXISTS idx_team_invitations_team_id ON team_invitations (team_id);
 CREATE INDEX IF NOT EXISTS idx_case_documents_case_id ON case_documents (case_id);
 CREATE INDEX IF NOT EXISTS idx_case_documents_document_id ON case_documents (document_id);
 CREATE INDEX IF NOT EXISTS idx_cases_owner_id ON cases (owner_id);
@@ -246,10 +260,14 @@ CREATE INDEX IF NOT EXISTS idx_storage_files_team_id ON storage_files (team_id);
 CREATE INDEX IF NOT EXISTS idx_storage_files_document_group_id ON storage_files (document_group_id);
 CREATE INDEX IF NOT EXISTS idx_storage_files_created_at ON storage_files (created_at);
 
--- Full-text search setup
-ALTER TABLE documents ADD COLUMN IF NOT EXISTS search_vector tsvector;
+-- Add full-text search support
+ALTER TABLE documents
+    ADD COLUMN IF NOT EXISTS search_vector tsvector;
+
+-- Create GIN index for fast full-text search
 CREATE INDEX IF NOT EXISTS idx_documents_search ON documents USING GIN (search_vector);
 
+-- Create function to update search vector (using single quotes for R2DBC compatibility)
 CREATE OR REPLACE FUNCTION documents_search_vector_update()
     RETURNS trigger AS
 '
@@ -261,6 +279,7 @@ CREATE OR REPLACE FUNCTION documents_search_vector_update()
     END;
 ' LANGUAGE plpgsql;
 
+-- Create trigger to auto-update search vector on INSERT/UPDATE
 DROP TRIGGER IF EXISTS documents_search_vector_trigger ON documents;
 CREATE TRIGGER documents_search_vector_trigger
     BEFORE INSERT OR UPDATE
@@ -268,7 +287,17 @@ CREATE TRIGGER documents_search_vector_trigger
     FOR EACH ROW
 EXECUTE FUNCTION documents_search_vector_update();
 
--- Document examples full-text search
+-- Update existing documents with search vectors
+UPDATE documents
+SET search_vector =
+        setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE(text, '')), 'B')
+WHERE search_vector IS NULL;
+
+-- Normalize existing emails and usernames
+UPDATE users SET email = LOWER(email), username = LOWER(username);
+
+-- Create search vector update for document_examples
 CREATE INDEX IF NOT EXISTS idx_document_examples_search ON document_examples USING GIN (search_vector);
 
 CREATE OR REPLACE FUNCTION document_examples_search_vector_update()
@@ -288,3 +317,136 @@ CREATE TRIGGER document_examples_search_vector_trigger
     ON document_examples
     FOR EACH ROW
 EXECUTE FUNCTION document_examples_search_vector_update();
+
+INSERT INTO document_examples (id, title, description, questions, base, requirements, template_files)
+VALUES
+    ('11111111-1111-1111-1111-111111111111',
+     'Pozew o rozwód (z alimentami)',
+     'Pozew o rozwód zawierający wnioski o uregulowanie władzy rodzicielskiej i alimentów na dzieci.',
+     '[
+       {"id":"plaintiff","text":"Kto składa pozew rozwodowy?","type":"ENTITY"},
+       {"id":"defendant","text":"Kim jest drugi małżonek?","type":"ENTITY"},
+       {"id":"marriage_date","text":"Data zawarcia małżeństwa","type":"TEXT"},
+       {"id":"marriage_place","text":"Miejsce zawarcia małżeństwa","type":"TEXT"},
+       {"id":"children_count","text":"Liczba małoletnich dzieci stron","type":"TEXT"},
+       {"id":"children_details","text":"Dane dzieci (imiona, daty urodzenia)","type":"TEXT"},
+       {"id":"alimony_amount","text":"Wnioskowana kwota alimentów na każde dziecko","type":"TEXT"},
+       {"id":"custody_request","text":"Wniosek dotyczący władzy rodzicielskiej","type":"TEXT"},
+       {"id":"fault","text":"Czy rozwód z orzekaniem o winie?","type":"TEXT"},
+       {"id":"separation_date","text":"Kiedy nastąpił zupełny i trwały rozkład pożycia?","type":"TEXT"}
+     ]'::jsonb,
+     '["eli/MP/1964/155/ogl", "eli/MP/1964/155/ogl"]'::jsonb,
+     '["Odpis aktu małżeństwa", "Odpisy aktów urodzenia dzieci", "Zaświadczenie o zarobkach"]'::jsonb,
+     '[
+       {"id":"t1111111-1111-1111-1111-111111111111","name":"pozew_rozwod_alimenty.pdf","s3Key":"templates/document-examples/11111111-1111-1111-1111-111111111111/pozew_rozwod_alimenty.pdf"}
+     ]'::jsonb),
+
+    ('22222222-2222-2222-2222-222222222222',
+     'Pozew o rozwód (bez dzieci)',
+     'Pozew o rozwód w sytuacji, gdy małżonkowie nie posiadają wspólnych małoletnich dzieci.',
+     '[
+       {"id":"plaintiff","text":"Dane powoda/powódki","type":"ENTITY"},
+       {"id":"defendant","text":"Dane pozwanego/pozwanej","type":"ENTITY"},
+       {"id":"marriage_date","text":"Data zawarcia związku małżeńskiego","type":"TEXT"},
+       {"id":"marriage_place","text":"Miejsce sporządzenia aktu małżeństwa","type":"TEXT"},
+       {"id":"separation_date","text":"Data ustania wspólnego pożycia","type":"TEXT"},
+       {"id":"fault","text":"Czy żądasz orzekania o winie małżonka?","type":"TEXT"},
+       {"id":"property_division","text":"Czy składasz wniosek o podział majątku wspólnego?","type":"TEXT"},
+       {"id":"maintenance_request","text":"Czy żądasz alimentów na swoją rzecz od małżonka?","type":"TEXT"},
+       {"id":"reasons","text":"Główne przyczyny rozkładu pożycia","type":"TEXT"},
+       {"id":"witnesses","text":"Dane świadków (jeśli dotyczy)","type":"TEXT"}
+     ]'::jsonb,
+     '["eli/MP/1964/155/ogl", "eli/MP/1964/155/ogl"]'::jsonb,
+     '["Skrócony odpis aktu małżeństwa"]'::jsonb,
+     '[
+       {"id":"t2222222-2222-2222-2222-222222222222","name":"pozew_rozwod_bez-dzieci.pdf","s3Key":"templates/document-examples/22222222-2222-2222-2222-222222222222/pozew_rozwod_bez-dzieci.pdf"}
+     ]'::jsonb),
+
+    ('33333333-3333-3333-3333-333333333333',
+     'Ponaglenie płatności',
+     'Formalne wezwanie do zapłaty zaległego zobowiązania.',
+     '[
+       {"id":"creditor","text":"Kto jest wierzycielem?","type":"ENTITY"},
+       {"id":"debtor","text":"Kto jest dłużnikiem?","type":"ENTITY"},
+       {"id":"amount","text":"Kwota zaległego zobowiązania","type":"TEXT"},
+       {"id":"currency","text":"Waluta zadłużenia","type":"TEXT"},
+       {"id":"invoice_number","text":"Numer faktury lub umowy","type":"TEXT"},
+       {"id":"due_date","text":"Pierwotny termin płatności","type":"TEXT"},
+       {"id":"delay_days","text":"Liczba dni opóźnienia w płatności","type":"TEXT"},
+       {"id":"interest","text":"Czy naliczane są odsetki ustawowe?","type":"TEXT"},
+       {"id":"payment_method","text":"Preferowany sposób dokonania płatności","type":"TEXT"},
+       {"id":"deadline","text":"Ostateczny termin zapłaty","type":"TEXT"}
+     ]'::jsonb,
+     '["eli/MP/1964/155/ogl"]'::jsonb,
+     '["Kopia faktury", "Kopia umowy"]'::jsonb,
+     '[
+       {"id":"t3333333-3333-3333-3333-333333333331","name":"payment_reminder_template_1.pdf","s3Key":"templates/document-examples/33333333-3333-3333-3333-333333333333/t3333333-3333-3333-3333-333333333331.pdf"},
+       {"id":"t3333333-3333-3333-3333-333333333332","name":"payment_reminder_template_2.pdf","s3Key":"templates/document-examples/33333333-3333-3333-3333-333333333333/t3333333-3333-3333-3333-333333333332.pdf"}
+     ]'::jsonb),
+
+    ('44444444-4444-4444-4444-444444444444',
+     'Ponaglenie płatności',
+     'Ostateczne wezwanie do zapłaty przed skierowaniem sprawy na drogę postępowania prawnego.',
+     '[
+       {"id":"creditor","text":"Wierzyciel występujący z wezwaniem","type":"ENTITY"},
+       {"id":"debtor","text":"Dłużnik zobowiązany do zapłaty","type":"ENTITY"},
+       {"id":"legal_basis","text":"Podstawa prawna dochodzonego roszczenia","type":"TEXT"},
+       {"id":"amount","text":"Łączna kwota do zapłaty","type":"TEXT"},
+       {"id":"interest","text":"Kwota naliczonych odsetek","type":"TEXT"},
+       {"id":"invoice_list","text":"Wykaz niezapłaconych faktur","type":"TEXT"},
+       {"id":"previous_reminders","text":"Czy były wysyłane wcześniejsze wezwania do zapłaty?","type":"TEXT"},
+       {"id":"bank_account","text":"Numer rachunku bankowego do zapłaty","type":"TEXT"},
+       {"id":"deadline","text":"Termin zapłaty pozwalający uniknąć dalszych kroków prawnych","type":"TEXT"},
+       {"id":"consequences","text":"Skutki braku zapłaty w wyznaczonym terminie","type":"TEXT"}
+     ]'::jsonb,
+     '["eli/MP/1964/155/ogl"]'::jsonb,
+     '["Faktury", "Dowody doręczenia"]'::jsonb,
+     '[
+       {"id":"t4444444-4444-4444-4444-444444444441","name":"final_payment_reminder_template_1.pdf","s3Key":"templates/document-examples/44444444-4444-4444-4444-444444444444/t4444444-4444-4444-4444-444444444441.pdf"},
+       {"id":"t4444444-4444-4444-4444-444444444442","name":"final_payment_reminder_template_2.pdf","s3Key":"templates/document-examples/44444444-4444-4444-4444-444444444444/t4444444-4444-4444-4444-444444444442.pdf"}
+     ]'::jsonb),
+
+    ('55555555-5555-5555-5555-555555555555',
+     'Wniosek o alimenty',
+     'Wniosek o zasądzenie świadczeń alimentacyjnych.',
+     '[
+       {"id":"claimant","text":"Kto składa wniosek o alimenty?","type":"ENTITY"},
+       {"id":"obligor","text":"Kto jest zobowiązany do płacenia alimentów?","type":"ENTITY"},
+       {"id":"beneficiary","text":"Na czyją rzecz mają być zasądzone alimenty?","type":"ENTITY"},
+       {"id":"relationship","text":"Jaki jest stosunek prawny pomiędzy stronami?","type":"TEXT"},
+       {"id":"amount","text":"Żądana kwota alimentów","type":"TEXT"},
+       {"id":"frequency","text":"Częstotliwość płatności alimentów","type":"TEXT"},
+       {"id":"needs","text":"Uzasadnienie potrzeb osoby uprawnionej","type":"TEXT"},
+       {"id":"income","text":"Dochody i możliwości zarobkowe zobowiązanego","type":"TEXT"},
+       {"id":"court","text":"Właściwy sąd do rozpoznania sprawy","type":"ENTITY"},
+       {"id":"evidence","text":"Dowody na poparcie żądania","type":"TEXT"}
+     ]'::jsonb,
+     '["eli/MP/1964/155/ogl"]'::jsonb,
+     '["Odpis aktu urodzenia", "Zaświadczenia o dochodach"]'::jsonb,
+     '[
+       {"id":"t5555555-5555-5555-5555-555555555551","name":"alimony_template_1.pdf","s3Key":"templates/document-examples/55555555-5555-5555-5555-555555555555/t5555555-5555-5555-5555-555555555551.pdf"},
+       {"id":"t5555555-5555-5555-5555-555555555552","name":"alimony_template_2.pdf","s3Key":"templates/document-examples/55555555-5555-5555-5555-555555555555/t5555555-5555-5555-5555-555555555552.pdf"}
+     ]'::jsonb),
+
+    ('66666666-6666-6666-6666-666666666666',
+     'Wniosek o odroczenie kary',
+     'Wniosek o odroczenie wykonania kary orzeczonej wyrokiem sądu.',
+     '[
+       {"id":"convict","text":"Kto jest osobą skazaną?","type":"ENTITY"},
+       {"id":"court","text":"Który sąd wydał wyrok skazujący?","type":"TEXT"},
+       {"id":"sentence","text":"Rodzaj i wymiar orzeczonej kary","type":"TEXT"},
+       {"id":"start_date","text":"Planowany termin rozpoczęcia odbywania kary","type":"TEXT"},
+       {"id":"requested_delay","text":"Wnioskowany okres odroczenia kary","type":"TEXT"},
+       {"id":"reason","text":"Przyczyna złożenia wniosku o odroczenie kary","type":"TEXT"},
+       {"id":"health","text":"Okoliczności zdrowotne uzasadniające odroczenie","type":"TEXT"},
+       {"id":"family","text":"Okoliczności rodzinne uzasadniające odroczenie","type":"TEXT"},
+       {"id":"evidence","text":"Dowody potwierdzające wskazane okoliczności","type":"TEXT"},
+       {"id":"signature","text":"Dane podpisu wnioskodawcy","type":"TEXT"}
+     ]'::jsonb,
+     '["eli/MP/1964/155/ogl"]'::jsonb,
+     '["Zaświadczenia lekarskie", "Dokumenty rodzinne"]'::jsonb,
+     '[
+       {"id":"t6666666-6666-6666-6666-666666666661","name":"sentence_delay_template_1.pdf","s3Key":"templates/document-examples/66666666-6666-6666-6666-666666666666/t6666666-6666-6666-6666-666666666661.pdf"},
+       {"id":"t6666666-6666-6666-6666-666666666662","name":"sentence_delay_template_2.pdf","s3Key":"templates/document-examples/66666666-6666-6666-6666-666666666666/t6666666-6666-6666-6666-666666666662.pdf"}
+     ]'::jsonb)
+ON CONFLICT (id) DO NOTHING;
