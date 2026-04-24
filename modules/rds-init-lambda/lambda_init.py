@@ -169,8 +169,7 @@ def lambda_handler(event, context):
             execute_sql(connection, seed_data_sql)
         else:
             logger.info(f"Skipping seed data (environment={environment})")
-        
-        
+
         logger.info("Schema initialization completed successfully")
         
         return {
