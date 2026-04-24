@@ -131,25 +131,48 @@ resource "aws_iam_role_policy" "lambda_policy" {
   })
 }
 
-# Package Lambda function
-data "archive_file" "lambda_package" {
-  type        = "zip"
-  source_file = "${path.module}/lambda_init.py"
-  output_path = "${path.module}/lambda_init.zip"
+# Build Lambda deployment package with psycopg2-binary baked in.
+# We install the manylinux2014 x86_64 wheel for cp312 directly, so the result
+# matches Lambda's python3.12 runtime regardless of the machine running terraform.
+resource "null_resource" "lambda_build" {
+  triggers = {
+    lambda_code = filesha256("${path.module}/lambda_init.py")
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      set -e
+      rm -rf ${path.module}/lambda_build
+      mkdir -p ${path.module}/lambda_build
+      cp ${path.module}/lambda_init.py ${path.module}/lambda_build/
+      python3 -m pip install \
+        --platform manylinux2014_x86_64 \
+        --python-version 3.12 \
+        --only-binary=:all: \
+        --implementation cp \
+        --target ${path.module}/lambda_build \
+        psycopg2-binary
+    EOT
+  }
 }
 
-# Lambda Layer with psycopg2
-# Note: You'll need to create this layer separately or use a public ARN
-# For now, using a placeholder - you'll need to either:
-# 1. Use a public psycopg2 layer ARN for your region
-# 2. Build the layer yourself with: pip install psycopg2-binary -t python/
+# Package Lambda function (zipped build directory from above)
+data "archive_file" "lambda_package" {
+  type        = "zip"
+  source_dir  = "${path.module}/lambda_build"
+  output_path = "${path.module}/lambda_init.zip"
+  depends_on  = [null_resource.lambda_build]
+}
+
+# Legacy psycopg2 layer - kept because the cognito post-auth Lambda still
+# references it via module output. The init Lambda no longer uses it (deps
+# are baked into the zip above), so the broken layer content doesn't matter.
 resource "aws_lambda_layer_version" "psycopg2" {
   filename            = "${path.module}/psycopg2-layer.zip"
   layer_name          = "${var.environment}-psycopg2"
   compatible_runtimes = ["python3.11", "python3.12"]
-  description         = "psycopg2 library for PostgreSQL connections"
+  description         = "psycopg2 library for PostgreSQL connections (legacy, unused)"
 
-  # This file needs to be created - see README
   lifecycle {
     ignore_changes = [filename]
   }
@@ -182,8 +205,6 @@ resource "aws_lambda_function" "rds_init" {
       ENVIRONMENT     = var.environment
     }
   }
-
-  layers = [aws_lambda_layer_version.psycopg2.arn]
 
   depends_on = [
     aws_iam_role_policy.lambda_policy,
