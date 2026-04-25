@@ -106,7 +106,7 @@ resource "aws_lb_target_group" "payments" {
 
 resource "aws_lb_target_group" "subscription_webhook" {
   name        = "${var.environment}-sub-webhook-tg"
-  port        = 3002
+  port        = 8080
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip"

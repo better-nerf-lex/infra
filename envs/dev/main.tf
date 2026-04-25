@@ -388,7 +388,7 @@ module "subscription_service" {
   cluster_id            = module.ecs_cluster.cluster_id
   cluster_name          = module.ecs_cluster.cluster_name
   image_uri             = var.subscription_service_image_uri
-  container_port        = 3002
+  container_port        = 8080
   cpu                   = var.subscription_service_cpu
   memory                = var.subscription_service_memory
   desired_count         = var.subscription_service_desired_count
