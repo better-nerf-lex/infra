@@ -203,6 +203,7 @@ resource "aws_lambda_function" "rds_init" {
       SCHEMA_BUCKET   = aws_s3_bucket.schema_files.id
       INIT_SCHEMA_KEY = aws_s3_object.init_schema.key
       ENVIRONMENT     = var.environment
+      EXTRA_DATABASES = join(",", var.extra_databases)
     }
   }
 

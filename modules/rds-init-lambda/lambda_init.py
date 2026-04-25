@@ -48,6 +48,39 @@ def execute_sql(connection, sql_content):
         raise
 
 
+def ensure_database_exists(db_host, db_port, db_username, db_password, target_db):
+    """Create a database if it doesn't already exist.
+
+    CREATE DATABASE cannot run inside a transaction, so we connect to the
+    default 'postgres' database with autocommit and check pg_database first.
+    """
+    admin_conn = None
+    try:
+        admin_conn = psycopg2.connect(
+            host=db_host,
+            port=db_port,
+            database='postgres',
+            user=db_username,
+            password=db_password,
+            sslmode='require',
+            connect_timeout=10,
+        )
+        admin_conn.autocommit = True
+        cur = admin_conn.cursor()
+        cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (target_db,))
+        if cur.fetchone():
+            logger.info(f"Database '{target_db}' already exists")
+        else:
+            logger.info(f"Creating database '{target_db}'")
+            # Identifier can't be parameterized; target_db comes from trusted env config.
+            cur.execute(f'CREATE DATABASE "{target_db}"')
+            logger.info(f"Database '{target_db}' created")
+        cur.close()
+    finally:
+        if admin_conn:
+            admin_conn.close()
+
+
 def migrate_cognito_columns(connection):
     """Add Cognito columns if they don't exist"""
     try:
@@ -124,16 +157,26 @@ def lambda_handler(event, context):
     init_schema_key = os.environ['INIT_SCHEMA_KEY']
     seed_data_key = os.environ.get('SEED_DATA_KEY', '')
     environment = os.environ.get('ENVIRONMENT', 'dev')
-    
+    # Comma-separated list of additional databases to create on the same cluster
+    # (e.g. subscription_service). Schema for those is managed by the owning
+    # service via TypeORM synchronize/migrations - we only ensure the DB exists.
+    extra_databases = [
+        db.strip() for db in os.environ.get('EXTRA_DATABASES', '').split(',') if db.strip()
+    ]
+
     connection = None
-    
+
     try:
         # Get database credentials
         logger.info("Retrieving database credentials")
         credentials = get_db_credentials(db_secret_arn)
         db_username = credentials.get('username')
         db_password = credentials.get('password')
-        
+
+        # Ensure required sibling databases exist on the cluster before touching schema
+        for sibling_db in extra_databases:
+            ensure_database_exists(db_host, db_port, db_username, db_password, sibling_db)
+
         # Connect to database
         logger.info(f"Connecting to database at {db_host}:{db_port}/{db_name}")
         connection = psycopg2.connect(

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users
     username        VARCHAR(255) UNIQUE NOT NULL,
     email           VARCHAR(255) UNIQUE NOT NULL,
     password        VARCHAR(255),
+    superadmin      BOOLEAN   NOT NULL DEFAULT FALSE,
     cognito_sub     VARCHAR(255) UNIQUE,
     email_verified  BOOLEAN   DEFAULT FALSE,
     enabled         BOOLEAN   DEFAULT TRUE,
@@ -450,3 +451,16 @@ VALUES
        {"id":"t6666666-6666-6666-6666-666666666662","name":"sentence_delay_template_2.pdf","s3Key":"templates/document-examples/66666666-6666-6666-6666-666666666666/t6666666-6666-6666-6666-666666666662.pdf"}
      ]'::jsonb)
 ON CONFLICT (id) DO NOTHING;
+
+
+-- Add superadmin column for already-deployed DBs (CREATE TABLE IF NOT EXISTS
+-- is a no-op when the table already exists, so it won't pick up new columns).
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'superadmin'
+    ) THEN
+        ALTER TABLE users ADD COLUMN superadmin BOOLEAN NOT NULL DEFAULT FALSE;
+    END IF;
+END $$;

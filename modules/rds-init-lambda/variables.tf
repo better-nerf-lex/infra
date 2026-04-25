@@ -43,3 +43,9 @@ variable "db_instance_id" {
   description = "RDS instance ID — used to re-trigger schema init when the DB is recreated"
   type        = string
 }
+
+variable "extra_databases" {
+  description = "Additional sibling databases to create on the same cluster (e.g. subscription_service). Lambda only creates the DB; schema is owned by the service itself."
+  type        = list(string)
+  default     = []
+}

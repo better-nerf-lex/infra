@@ -186,6 +186,7 @@ module "rds_init" {
   private_subnet_ids   = module.vpc.private_subnet_ids
   db_security_group_id = module.rds.db_security_group_id
   db_instance_id       = module.rds.db_instance_id
+  extra_databases      = ["subscription_service"]
 
   depends_on = [module.rds]
 }
@@ -412,6 +413,12 @@ module "subscription_service" {
     DB_NAME                     = "subscription_service"
     DB_SSL                      = "true"
     DB_SSL_REJECT_UNAUTHORIZED  = "false"
+    # Dev-only: let TypeORM auto-create tables from entities. Flip to "false"
+    # for prod once a migration-run step is added to the deploy pipeline.
+    DB_SYNCHRONIZE              = "true"
+    # Dev-only: opt-in flag read by MockSubscriptionSeeder. The NODE_ENV gate
+    # can't be used because dev also runs with NODE_ENV=production.
+    ENABLE_MOCK_SEED            = "true"
     GATEWAY_SERVICE_URL         = "http://gateway.${var.environment}.${var.project_name}.local:8080"
   }
 
