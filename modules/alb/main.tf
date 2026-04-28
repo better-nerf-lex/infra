@@ -128,6 +128,17 @@ resource "aws_lb_target_group" "subscription_webhook" {
     Environment = var.environment
     Project     = var.project_name
   }
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      name,
+      port,
+      protocol,
+      target_type,
+      vpc_id
+    ]
+  }
 }
 
 # File service is accessed via AWS Cloud Map service discovery
