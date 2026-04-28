@@ -131,47 +131,18 @@ resource "aws_iam_role_policy" "lambda_policy" {
   })
 }
 
-# Build Lambda deployment package with psycopg2-binary baked in.
-# We install the manylinux2014 x86_64 wheel for cp312 directly, so the result
-# matches Lambda's python3.12 runtime regardless of the machine running terraform.
-resource "null_resource" "lambda_build" {
-  triggers = {
-    lambda_code = filesha256("${path.module}/lambda_init.py")
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      rm -rf ${path.module}/lambda_build
-      mkdir -p ${path.module}/lambda_build
-      cp ${path.module}/lambda_init.py ${path.module}/lambda_build/
-      python3 -m pip install \
-        --platform manylinux2014_x86_64 \
-        --python-version 3.12 \
-        --only-binary=:all: \
-        --implementation cp \
-        --target ${path.module}/lambda_build \
-        psycopg2-binary
-    EOT
-  }
-}
-
-# Package Lambda function (zipped build directory from above)
+# Package Lambda function
 data "archive_file" "lambda_package" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda_build"
+  source_file = "${path.module}/lambda_init.py"
   output_path = "${path.module}/lambda_init.zip"
-  depends_on  = [null_resource.lambda_build]
 }
 
-# Legacy psycopg2 layer - kept because the cognito post-auth Lambda still
-# references it via module output. The init Lambda no longer uses it (deps
-# are baked into the zip above), so the broken layer content doesn't matter.
 resource "aws_lambda_layer_version" "psycopg2" {
   filename            = "${path.module}/psycopg2-layer.zip"
   layer_name          = "${var.environment}-psycopg2"
   compatible_runtimes = ["python3.11", "python3.12"]
-  description         = "psycopg2 library for PostgreSQL connections (legacy, unused)"
+  description         = "psycopg2 library for PostgreSQL connections"
 
   lifecycle {
     ignore_changes = [filename]
@@ -188,6 +159,7 @@ resource "aws_lambda_function" "rds_init" {
   runtime          = "python3.12"
   timeout          = 300
   memory_size      = 512
+  layers           = [aws_lambda_layer_version.psycopg2.arn]
 
   vpc_config {
     subnet_ids         = var.private_subnet_ids
