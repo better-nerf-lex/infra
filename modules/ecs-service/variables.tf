@@ -70,7 +70,7 @@ variable "min_capacity" {
 }
 
 variable "max_capacity" {
-  description = "Maximum number of tasks for autoscaling" 
+  description = "Maximum number of tasks for autoscaling"
   type        = number
   default     = 3
 }
@@ -121,4 +121,16 @@ variable "health_check_path" {
   description = "Health check endpoint path"
   type        = string
   default     = "/actuator/health"
+}
+
+variable "health_check_grace_period_seconds" {
+  description = "Seconds ECS should ignore load balancer health checks after a task starts"
+  type        = number
+  default     = 120
+}
+
+variable "container_health_check_start_period_seconds" {
+  description = "Seconds ECS should wait before evaluating container health checks"
+  type        = number
+  default     = 120
 }

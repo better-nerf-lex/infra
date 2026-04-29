@@ -160,7 +160,7 @@ resource "aws_ecs_task_definition" "main" {
       interval    = 30
       timeout     = 5
       retries     = 3
-      startPeriod = 120
+      startPeriod = var.container_health_check_start_period_seconds
     }
   }])
 
@@ -178,9 +178,9 @@ resource "aws_ecs_service" "main" {
   task_definition = aws_ecs_task_definition.main.arn
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
-  
+
   # Allow time for app startup before ALB health checks fail the task
-  health_check_grace_period_seconds = var.target_group_arn != null ? 120 : null
+  health_check_grace_period_seconds = var.target_group_arn != null ? var.health_check_grace_period_seconds : null
 
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -224,6 +224,12 @@ resource "aws_ecs_service" "main" {
     Environment = var.environment
     Project     = var.project_name
     Service     = var.service_name
+  }
+
+  lifecycle {
+    ignore_changes = [
+      task_definition
+    ]
   }
 }
 

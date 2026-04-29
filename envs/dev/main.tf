@@ -204,24 +204,26 @@ module "iam" {
 module "gateway_service" {
   source = "../../modules/ecs-service"
 
-  environment           = var.environment
-  project_name          = var.project_name
-  service_name          = "gateway"
-  vpc_id                = module.vpc.vpc_id
-  private_subnet_ids    = module.vpc.private_subnet_ids
-  cluster_id            = module.ecs_cluster.cluster_id
-  cluster_name          = module.ecs_cluster.cluster_name
-  image_uri             = var.gateway_image_uri
-  container_port        = 8080
-  cpu                   = var.gateway_cpu
-  memory                = var.gateway_memory
-  desired_count         = var.gateway_desired_count
-  min_capacity          = var.gateway_min_capacity
-  max_capacity          = var.gateway_max_capacity
-  target_group_arn      = module.alb.gateway_target_group_arn
-  alb_security_group_id = module.alb.alb_security_group_id
-  log_group_name        = module.ecs_cluster.log_group_name
-  aws_region            = var.aws_region
+  environment                                 = var.environment
+  project_name                                = var.project_name
+  service_name                                = "gateway"
+  vpc_id                                      = module.vpc.vpc_id
+  private_subnet_ids                          = module.vpc.private_subnet_ids
+  cluster_id                                  = module.ecs_cluster.cluster_id
+  cluster_name                                = module.ecs_cluster.cluster_name
+  image_uri                                   = var.gateway_image_uri
+  container_port                              = 8080
+  cpu                                         = var.gateway_cpu
+  memory                                      = var.gateway_memory
+  desired_count                               = var.gateway_desired_count
+  min_capacity                                = var.gateway_min_capacity
+  max_capacity                                = var.gateway_max_capacity
+  health_check_grace_period_seconds           = 300
+  container_health_check_start_period_seconds = 180
+  target_group_arn                            = module.alb.gateway_target_group_arn
+  alb_security_group_id                       = module.alb.alb_security_group_id
+  log_group_name                              = module.ecs_cluster.log_group_name
+  aws_region                                  = var.aws_region
 
   environment_variables = {
     SPRING_PROFILES_ACTIVE = "prod"
@@ -320,25 +322,25 @@ resource "aws_service_discovery_service" "file_service" {
 module "file_service" {
   source = "../../modules/ecs-service"
 
-  environment           = var.environment
-  project_name          = var.project_name
-  service_name          = "file-service"
-  vpc_id                = module.vpc.vpc_id
-  private_subnet_ids    = module.vpc.private_subnet_ids
-  cluster_id            = module.ecs_cluster.cluster_id
-  cluster_name          = module.ecs_cluster.cluster_name
-  image_uri             = var.file_service_image_uri
-  container_port        = 8080
-  cpu                   = var.file_service_cpu
-  memory                = var.file_service_memory
-  desired_count         = var.file_service_desired_count
-  min_capacity          = var.file_service_min_capacity
-  max_capacity          = var.file_service_max_capacity
+  environment        = var.environment
+  project_name       = var.project_name
+  service_name       = "file-service"
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnet_ids
+  cluster_id         = module.ecs_cluster.cluster_id
+  cluster_name       = module.ecs_cluster.cluster_name
+  image_uri          = var.file_service_image_uri
+  container_port     = 8080
+  cpu                = var.file_service_cpu
+  memory             = var.file_service_memory
+  desired_count      = var.file_service_desired_count
+  min_capacity       = var.file_service_min_capacity
+  max_capacity       = var.file_service_max_capacity
   # No target_group_arn - internal service only
   # No alb_security_group_id - internal service only
-  log_group_name        = module.ecs_cluster.log_group_name
-  aws_region            = var.aws_region
-  health_check_path     = "/health"
+  log_group_name    = module.ecs_cluster.log_group_name
+  aws_region        = var.aws_region
+  health_check_path = "/health"
 
   service_registries = {
     registry_arn = aws_service_discovery_service.file_service.arn
@@ -405,21 +407,21 @@ module "subscription_service" {
   }
 
   environment_variables = {
-    NODE_ENV                    = "production"
-    PORT                        = "8080"
-    AWS_REGION                  = var.aws_region
-    DB_HOST                     = module.rds.db_address
-    DB_PORT                     = "5432"
-    DB_NAME                     = "subscription_service"
-    DB_SSL                      = "true"
-    DB_SSL_REJECT_UNAUTHORIZED  = "false"
+    NODE_ENV                   = "production"
+    PORT                       = "8080"
+    AWS_REGION                 = var.aws_region
+    DB_HOST                    = module.rds.db_address
+    DB_PORT                    = "5432"
+    DB_NAME                    = "subscription_service"
+    DB_SSL                     = "true"
+    DB_SSL_REJECT_UNAUTHORIZED = "false"
     # Dev-only: let TypeORM auto-create tables from entities. Flip to "false"
     # for prod once a migration-run step is added to the deploy pipeline.
-    DB_SYNCHRONIZE              = "true"
+    DB_SYNCHRONIZE = "true"
     # Dev-only: opt-in flag read by MockSubscriptionSeeder. The NODE_ENV gate
     # can't be used because dev also runs with NODE_ENV=production.
-    ENABLE_MOCK_SEED            = "true"
-    GATEWAY_SERVICE_URL         = "http://gateway.${var.environment}.${var.project_name}.local:8080"
+    ENABLE_MOCK_SEED    = "true"
+    GATEWAY_SERVICE_URL = "http://gateway.${var.environment}.${var.project_name}.local:8080"
   }
 
   secrets = {

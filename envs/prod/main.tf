@@ -172,24 +172,26 @@ module "iam" {
 module "gateway_service" {
   source = "../../modules/ecs-service"
 
-  environment           = var.environment
-  project_name          = var.project_name
-  service_name          = "gateway"
-  vpc_id                = module.vpc.vpc_id
-  private_subnet_ids    = module.vpc.private_subnet_ids
-  cluster_id            = module.ecs_cluster.cluster_id
-  cluster_name          = module.ecs_cluster.cluster_name
-  image_uri             = var.gateway_image_uri
-  container_port        = 8080
-  cpu                   = var.gateway_cpu
-  memory                = var.gateway_memory
-  desired_count         = var.gateway_desired_count
-  min_capacity          = var.gateway_min_capacity
-  max_capacity          = var.gateway_max_capacity
-  target_group_arn      = module.alb.gateway_target_group_arn
-  alb_security_group_id = module.alb.alb_security_group_id
-  log_group_name        = module.ecs_cluster.log_group_name
-  aws_region            = var.aws_region
+  environment                                 = var.environment
+  project_name                                = var.project_name
+  service_name                                = "gateway"
+  vpc_id                                      = module.vpc.vpc_id
+  private_subnet_ids                          = module.vpc.private_subnet_ids
+  cluster_id                                  = module.ecs_cluster.cluster_id
+  cluster_name                                = module.ecs_cluster.cluster_name
+  image_uri                                   = var.gateway_image_uri
+  container_port                              = 8080
+  cpu                                         = var.gateway_cpu
+  memory                                      = var.gateway_memory
+  desired_count                               = var.gateway_desired_count
+  min_capacity                                = var.gateway_min_capacity
+  max_capacity                                = var.gateway_max_capacity
+  health_check_grace_period_seconds           = 300
+  container_health_check_start_period_seconds = 180
+  target_group_arn                            = module.alb.gateway_target_group_arn
+  alb_security_group_id                       = module.alb.alb_security_group_id
+  log_group_name                              = module.ecs_cluster.log_group_name
+  aws_region                                  = var.aws_region
 
   environment_variables = {
     SPRING_PROFILES_ACTIVE = "prod"
