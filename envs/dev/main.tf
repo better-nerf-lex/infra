@@ -173,6 +173,16 @@ resource "aws_security_group_rule" "rds_ingress_subscription" {
   description              = "Allow PostgreSQL from subscription service"
 }
 
+resource "aws_security_group_rule" "subscription_ingress_gateway" {
+  type                     = "ingress"
+  from_port                = 8080
+  to_port                  = 8080
+  protocol                 = "tcp"
+  security_group_id        = module.subscription_service.security_group_id
+  source_security_group_id = module.gateway_service.security_group_id
+  description              = "Allow gateway to call subscription service over Cloud Map"
+}
+
 # RDS schema initialization via Lambda
 module "rds_init" {
   source = "../../modules/rds-init-lambda"
