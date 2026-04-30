@@ -349,3 +349,27 @@ variable "stripe_webhook_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "stripe_price_solo_monthly" {
+  description = "Stripe dev price ID for the Solo monthly plan"
+  type        = string
+  default     = ""
+}
+
+variable "stripe_price_team_monthly" {
+  description = "Stripe dev price ID for the Team monthly plan"
+  type        = string
+  default     = ""
+}
+
+variable "stripe_price_topup_10" {
+  description = "Stripe dev price ID for the 10-token top-up"
+  type        = string
+  default     = ""
+}
+
+variable "stripe_price_topup_100" {
+  description = "Stripe dev price ID for the 100-token top-up"
+  type        = string
+  default     = ""
+}

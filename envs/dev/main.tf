@@ -226,20 +226,21 @@ module "gateway_service" {
   aws_region                                  = var.aws_region
 
   environment_variables = {
-    SPRING_PROFILES_ACTIVE = "prod"
-    AWS_REGION             = var.aws_region
-    FILE_SERVICE_URL       = "http://file-service.${var.environment}.${var.project_name}.local:8080"
-    FRONTEND_URL           = "https://${var.frontend_domain}"
-    ELASTICSEARCH_URL      = var.enable_elasticsearch ? "https://${module.opensearch[0].domain_endpoint}" : ""
-    ELASTICSEARCH_ENABLED  = var.enable_elasticsearch ? "true" : "false"
-    DB_HOST                = module.rds.db_address
-    DB_PORT                = "5432"
-    DB_NAME                = module.rds.db_name
-    COGNITO_USER_POOL_ID   = module.cognito.user_pool_id
-    COGNITO_CLIENT_ID      = module.cognito.user_pool_client_id
-    POSTMARK_API_TOKEN     = var.postmark_api_token
-    EMAIL_FROM             = var.email_from
-    EMAIL_ENABLED          = var.email_enabled
+    SPRING_PROFILES_ACTIVE   = "prod"
+    AWS_REGION               = var.aws_region
+    FILE_SERVICE_URL         = "http://file-service.${var.environment}.${var.project_name}.local:8080"
+    FRONTEND_URL             = "https://${var.frontend_domain}"
+    ELASTICSEARCH_URL        = var.enable_elasticsearch ? "https://${module.opensearch[0].domain_endpoint}" : ""
+    ELASTICSEARCH_ENABLED    = var.enable_elasticsearch ? "true" : "false"
+    DB_HOST                  = module.rds.db_address
+    DB_PORT                  = "5432"
+    DB_NAME                  = module.rds.db_name
+    COGNITO_USER_POOL_ID     = module.cognito.user_pool_id
+    COGNITO_CLIENT_ID        = module.cognito.user_pool_client_id
+    POSTMARK_API_TOKEN       = var.postmark_api_token
+    EMAIL_FROM               = var.email_from
+    EMAIL_ENABLED            = var.email_enabled
+    SUBSCRIPTION_SERVICE_URL = "http://subscription-service.${var.environment}.${var.project_name}.local:8080"
   }
 
   service_registries = {
@@ -420,8 +421,14 @@ module "subscription_service" {
     DB_SYNCHRONIZE = "true"
     # Dev-only: opt-in flag read by MockSubscriptionSeeder. The NODE_ENV gate
     # can't be used because dev also runs with NODE_ENV=production.
-    ENABLE_MOCK_SEED    = "true"
-    GATEWAY_SERVICE_URL = "http://gateway.${var.environment}.${var.project_name}.local:8080"
+    ENABLE_MOCK_SEED            = "true"
+    GATEWAY_SERVICE_URL         = "http://gateway.${var.environment}.${var.project_name}.local:8080"
+    STRIPE_PRICE_SOLO_MONTHLY   = var.stripe_price_solo_monthly
+    STRIPE_PRICE_TEAM_MONTHLY   = var.stripe_price_team_monthly
+    STRIPE_PRICE_TOPUP_10       = var.stripe_price_topup_10
+    STRIPE_PRICE_TOPUP_100      = var.stripe_price_topup_100
+    STRIPE_CHECKOUT_SUCCESS_URL = "https://${var.frontend_domain}/billing?checkout=success"
+    STRIPE_CHECKOUT_CANCEL_URL  = "https://${var.frontend_domain}/billing?checkout=cancelled"
   }
 
   secrets = {
