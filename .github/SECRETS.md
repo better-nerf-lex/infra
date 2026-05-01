@@ -33,6 +33,19 @@ Navigate to your GitHub repository → **Settings** → **Secrets and variables*
 | `TF_VAR_STRIPE_API_KEY` | Stripe API key for payments | [Stripe Dashboard](https://dashboard.stripe.com/) |
 | `TF_VAR_STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret | [Stripe Webhooks](https://dashboard.stripe.com/webhooks) |
 
+### Discord Merge Notifications
+
+| Secret Name | Description | Source |
+|------------|-------------|--------|
+| `DISCORD_WEBHOOK_URL` | Discord incoming webhook used by merge notification workflows in all repos | Discord channel settings -> Integrations -> Webhooks |
+
+For private repositories on GitHub Free organizations, add `DISCORD_WEBHOOK_URL` as a repository secret in each repo instead of an organization secret:
+
+- `better-nerf-lex/gateway`
+- `better-nerf-lex/lexai-front`
+- `better-nerf-lex/subscription-service`
+- `better-nerf-lex/infra`
+
 ## GitHub Environment Protection (Production)
 
 For the production workflow to require manual approval:
