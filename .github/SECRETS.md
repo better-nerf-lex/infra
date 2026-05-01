@@ -44,6 +44,7 @@ For private repositories on GitHub Free organizations, add `DISCORD_WEBHOOK_URL`
 - `better-nerf-lex/gateway`
 - `better-nerf-lex/lexai-front`
 - `better-nerf-lex/subscription-service`
+- `better-nerf-lex/file-service`
 - `better-nerf-lex/infra`
 
 ## GitHub Environment Protection (Production)
