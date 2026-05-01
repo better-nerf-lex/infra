@@ -31,6 +31,17 @@ resource "aws_security_group" "ecs_tasks" {
     }
   }
 
+  dynamic "ingress" {
+    for_each = var.additional_ingress_security_groups
+    content {
+      from_port       = var.container_port
+      to_port         = var.container_port
+      protocol        = "tcp"
+      security_groups = [ingress.value.security_group_id]
+      description     = ingress.value.description
+    }
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -156,7 +167,7 @@ resource "aws_ecs_task_definition" "main" {
     }
 
     healthCheck = {
-      command     = ["CMD-SHELL", "curl -f http://localhost:${var.container_port}${var.health_check_path} || exit 1"]
+      command     = var.container_health_check_command != null ? var.container_health_check_command : ["CMD-SHELL", "curl -f http://localhost:${var.container_port}${var.health_check_path} || exit 1"]
       interval    = 30
       timeout     = 5
       retries     = 3

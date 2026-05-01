@@ -173,16 +173,6 @@ resource "aws_security_group_rule" "rds_ingress_subscription" {
   description              = "Allow PostgreSQL from subscription service"
 }
 
-resource "aws_security_group_rule" "subscription_ingress_gateway" {
-  type                     = "ingress"
-  from_port                = 8080
-  to_port                  = 8080
-  protocol                 = "tcp"
-  security_group_id        = module.subscription_service.security_group_id
-  source_security_group_id = module.gateway_service.security_group_id
-  description              = "Allow gateway to call subscription service over Cloud Map"
-}
-
 # RDS schema initialization via Lambda
 module "rds_init" {
   source = "../../modules/rds-init-lambda"
@@ -412,6 +402,16 @@ module "subscription_service" {
   log_group_name        = module.ecs_cluster.log_group_name
   aws_region            = var.aws_region
   health_check_path     = "/health"
+  additional_ingress_security_groups = {
+    gateway = {
+      security_group_id = module.gateway_service.security_group_id
+      description       = "Allow gateway to call subscription service over Cloud Map"
+    }
+  }
+  container_health_check_command = [
+    "CMD-SHELL",
+    "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"
+  ]
 
   service_registries = {
     registry_arn = aws_service_discovery_service.subscription_service.arn

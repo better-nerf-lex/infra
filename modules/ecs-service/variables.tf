@@ -109,6 +109,15 @@ variable "secrets" {
   default     = {}
 }
 
+variable "additional_ingress_security_groups" {
+  description = "Additional security groups allowed to reach the container port"
+  type = map(object({
+    security_group_id = string
+    description       = string
+  }))
+  default = {}
+}
+
 variable "service_registries" {
   description = "Service discovery registries for the service"
   type = object({
@@ -133,4 +142,10 @@ variable "container_health_check_start_period_seconds" {
   description = "Seconds ECS should wait before evaluating container health checks"
   type        = number
   default     = 120
+}
+
+variable "container_health_check_command" {
+  description = "Optional ECS container health check command override"
+  type        = list(string)
+  default     = null
 }
