@@ -8,11 +8,6 @@ variable "environment" {
   type        = string
 }
 
-variable "ses_email_identity" {
-  description = "SES verified email identity for sending emails"
-  type        = string
-}
-
 variable "post_auth_lambda_role_arn" {
   description = "IAM role ARN for post-authentication Lambda function"
   type        = string

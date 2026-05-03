@@ -23,7 +23,7 @@ api_domain      = "test-0.paragrafic.pl"
 use_route53 = false
 
 # SSL/TLS Certificates
-enable_ssl_certificates          = true
+enable_ssl_certificates           = true
 existing_frontend_certificate_arn = "arn:aws:acm:us-east-1:579540613167:certificate/2c36aa0d-e22c-42c8-82bc-2a55d51972d6"
 existing_api_certificate_arn      = "arn:aws:acm:eu-north-1:579540613167:certificate/28ee2755-06a2-4353-a9b2-9037bc760990"
 

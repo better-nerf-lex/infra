@@ -17,12 +17,9 @@ resource "aws_cognito_user_pool" "main" {
     temporary_password_validity_days = 7
   }
 
-  # Email configuration (SES)
+  # Email configuration: use Cognito's built-in sender in dev.
   email_configuration {
-    email_sending_account  = "DEVELOPER"
-    source_arn            = "arn:aws:ses:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:identity/${var.ses_email_identity}"
-    from_email_address    = var.ses_email_identity
-    reply_to_email_address = var.ses_email_identity
+    email_sending_account = "COGNITO_DEFAULT"
   }
 
   # MFA configuration
@@ -96,7 +93,7 @@ resource "aws_cognito_user_pool_client" "main" {
   user_pool_id = aws_cognito_user_pool.main.id
 
   supported_identity_providers = ["COGNITO", "Google"]
-  
+
   # OAuth flows
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code", "implicit"]
@@ -126,9 +123,9 @@ resource "aws_cognito_user_pool_client" "main" {
   ]
 
   # Token validity
-  access_token_validity  = 60  # minutes
+  access_token_validity  = 60 # minutes
   id_token_validity      = 60
-  refresh_token_validity = 30  # days
+  refresh_token_validity = 30 # days
 
   token_validity_units {
     access_token  = "minutes"
@@ -155,5 +152,3 @@ resource "aws_cognito_user_pool_domain" "main" {
   domain       = "${var.environment}-${var.project_name}-auth"
   user_pool_id = aws_cognito_user_pool.main.id
 }
-
-data "aws_caller_identity" "current" {}
