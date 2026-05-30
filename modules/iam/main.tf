@@ -141,6 +141,41 @@ resource "aws_iam_role_policy" "github_actions_s3_cloudfront" {
   })
 }
 
+resource "aws_iam_role_policy" "github_actions_private_knowledge" {
+  name = "${var.environment}-github-actions-private-knowledge-policy"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = "arn:aws:s3:::${var.environment}-${var.project_name}-documents"
+        Condition = {
+          StringLike = {
+            "s3:prefix" = [
+              "knowledge",
+              "knowledge/*"
+            ]
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject"
+        ]
+        Resource = "arn:aws:s3:::${var.environment}-${var.project_name}-documents/knowledge/*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "github_actions_terraform" {
   name = "${var.environment}-github-actions-terraform-policy"
   role = aws_iam_role.github_actions.id
