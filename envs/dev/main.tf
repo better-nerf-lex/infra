@@ -230,6 +230,7 @@ module "gateway_service" {
     AWS_REGION               = var.aws_region
     FILE_SERVICE_URL         = "http://file-service.${var.environment}.${var.project_name}.local:8080"
     FRONTEND_URL             = "https://${var.frontend_domain}"
+    GOOGLE_REDIRECT_URI      = "https://${var.frontend_domain}/login/oauth2/code/google"
     ELASTICSEARCH_URL        = var.enable_elasticsearch ? "https://${module.opensearch[0].domain_endpoint}" : ""
     ELASTICSEARCH_ENABLED    = var.enable_elasticsearch ? "true" : "false"
     DB_HOST                  = module.rds.db_address
