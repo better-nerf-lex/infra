@@ -302,6 +302,12 @@ variable "anthropic_api_key" {
   sensitive   = true
 }
 
+variable "openai_api_key" {
+  description = "OpenAI API Key"
+  type        = string
+  sensitive   = true
+}
+
 variable "jwt_secret" {
   description = "JWT Secret Key"
   type        = string

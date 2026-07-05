@@ -242,6 +242,12 @@ module "gateway_service" {
     EMAIL_FROM               = var.email_from
     EMAIL_ENABLED            = var.email_enabled
     SUBSCRIPTION_SERVICE_URL = "http://subscription-service.${var.environment}.${var.project_name}.local:8080"
+    AI_PRIMARY_PROVIDER      = "anthropic"
+    AI_FALLBACK_PROVIDER     = "anthropic"
+    AI_OPENAI_ROLLOUT_RATIO  = "1.0"
+    OPENAI_MODEL             = "gpt-5.5"
+    OPENAI_CHAT_MODEL        = "gpt-5.5"
+    OPENAI_REASONING_EFFORT  = "medium"
   }
 
   service_registries = {
@@ -252,6 +258,7 @@ module "gateway_service" {
     SPRING_R2DBC_USERNAME       = "${module.rds.db_secret_arn}:username::"
     SPRING_R2DBC_PASSWORD       = "${module.rds.db_secret_arn}:password::"
     SPRING_AI_ANTHROPIC_API_KEY = "${aws_secretsmanager_secret.gateway_secrets.arn}:anthropic_api_key::"
+    OPENAI_API_KEY              = "${aws_secretsmanager_secret.gateway_secrets.arn}:openai_api_key::"
     JWT_SECRET                  = "${aws_secretsmanager_secret.gateway_secrets.arn}:jwt_secret::"
     GOOGLE_CLIENT_ID            = "${aws_secretsmanager_secret.gateway_secrets.arn}:google_client_id::"
     GOOGLE_CLIENT_SECRET        = "${aws_secretsmanager_secret.gateway_secrets.arn}:google_client_secret::"
@@ -269,6 +276,7 @@ resource "aws_secretsmanager_secret_version" "gateway_secrets" {
   secret_id = aws_secretsmanager_secret.gateway_secrets.id
   secret_string = jsonencode({
     anthropic_api_key     = var.anthropic_api_key
+    openai_api_key        = var.openai_api_key
     jwt_secret            = var.jwt_secret
     google_client_id      = var.google_client_id
     google_client_secret  = var.google_client_secret

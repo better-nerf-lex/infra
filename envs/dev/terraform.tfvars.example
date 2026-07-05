@@ -31,6 +31,7 @@ enable_ssl_certificates = false
 
 # Secrets (use environment variables TF_VAR_... or a secure .tfvars file in production)
 # anthropic_api_key = "..."
+# openai_api_key    = "..."
 # jwt_secret        = "..."
 # google_client_id  = "..."
 # google_client_secret = "..."
