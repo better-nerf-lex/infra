@@ -306,6 +306,11 @@ variable "openai_api_key" {
   description = "OpenAI API Key"
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = length(trimspace(var.openai_api_key)) > 0
+    error_message = "openai_api_key must be provided and cannot be empty."
+  }
 }
 
 variable "jwt_secret" {

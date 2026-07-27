@@ -50,6 +50,7 @@ jobs:
         run: terraform plan -var-file=dev.tfvars -var 'aws_profile=' -out=tfplan
         env:
           TF_VAR_anthropic_api_key: ${{ secrets.TF_VAR_ANTHROPIC_API_KEY }}
+          TF_VAR_openai_api_key: ${{ secrets.TF_VAR_OPENAI_API_KEY }}
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_google_client_id: ${{ secrets.TF_VAR_GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.TF_VAR_GOOGLE_CLIENT_SECRET }}
@@ -61,6 +62,7 @@ jobs:
         run: terraform apply -auto-approve tfplan
         env:
           TF_VAR_anthropic_api_key: ${{ secrets.TF_VAR_ANTHROPIC_API_KEY }}
+          TF_VAR_openai_api_key: ${{ secrets.TF_VAR_OPENAI_API_KEY }}
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_google_client_id: ${{ secrets.TF_VAR_GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.TF_VAR_GOOGLE_CLIENT_SECRET }}
